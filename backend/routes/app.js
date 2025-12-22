@@ -11,7 +11,7 @@ const router = express.Router();
 router.use('/elsparkcyklar', elsparkcyklarRoutesV1);
 router.use('/parkeringar', paerkeringRoutesV1);
 router.use('/laddningar', laddningsRoutesV1);
-router.use('/städer', städerRoutesV1);
+router.use('/cities', städerRoutesV1);
 router.use('/user', userRoutesV1);
 
 export default router;

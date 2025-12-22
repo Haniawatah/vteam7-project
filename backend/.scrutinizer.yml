@@ -1,0 +1,19 @@
+language: node_js
+node_js:
+  - '22'
+build_tool: npm
+
+env:
+  vars:
+    DB_PASS: fBxO5eHEFZPe0Aqv
+
+#Kör tester
+tests:
+  override:
+    - npm install
+    - npm test
+
+#Våran coverage
+coverage:
+  tools:
+    nyc: true
