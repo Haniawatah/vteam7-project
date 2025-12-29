@@ -1,6 +1,6 @@
 import 'dotenv/config';
-
-import { MongoClient, ServerApiVersion } from 'mongodb';
+import crypto from 'crypto';
+import { MongoClient, ObjectId, ServerApiVersion } from 'mongodb';
 
 const database = {
     getDb: async function getDb () {
@@ -36,4 +36,40 @@ const database = {
     }
 };
 
+export const db = {
+    scooters: [],
+    rides: [],
+    users: [],
+    paymentsByUserId: new Map(),
+};
+
+export function ensureSeeded() {
+    if (db.scooters.length) return;
+
+    db.scooters.push(
+        { id: crypto.randomUUID(), model: 'SE-100', latitude: 59.3293, longitude: 18.0686, status: 'available' },
+        { id: crypto.randomUUID(), model: 'SE-200', latitude: 59.3393, longitude: 18.0586, status: 'available' }
+    );
+
+    db.users.push({ id: crypto.randomUUID(), name: 'Admin', email: 'admin@example.com', balance: 0 });
+}
+
+async function ensureIndexes(database) {
+  await database.collection("users").createIndex({ email: 1 }, { unique: true });
+  await database.collection("sessions").createIndex({ token: 1 }, { unique: true });
+  await database.collection("sessions").createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+  await database.collection("scooters").createIndex({ status: 1 });
+  await database.collection("rides").createIndex({ userId: 1, startTime: -1 });
+}
+
+export async function getDb() {
+  if (db) return db;
+  client = new MongoClient(MONGO_URL);
+  await client.connect();
+  db = client.db(MONGO_DB);
+  await ensureIndexes(db);
+  return db;
+}
+
+export { ObjectId };
 export default database;

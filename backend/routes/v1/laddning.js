@@ -1,12 +1,13 @@
 import express from 'express';
-import laddnings_station from '../../models/laddnings-stationer.js';
+import { getDb } from '../../database.js';
+import { listChargingStations } from '../../models/laddnings-stationer.js';
 
 const router = express.Router();
 
 // GET all charging stations
-router.get('/', async (req, res) => {
-    const data = await laddnings_station.getAll();
-    res.status(200).json(data);
+router.get('/charging-stations', async (_req, res) => {
+    const db = await getDb();
+    res.json(await listChargingStations(db));
 });
 
 

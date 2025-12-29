@@ -1,14 +1,14 @@
 import express from 'express';
-import städer from '../../models/städer.js';
+import { getDb } from '../../database.js';
+import { listCities } from '../../models/städer.js';
 
 const router = express.Router();
 
 // GET all cities
-router.get('/', async (req, res) => {
-    const data = await städer.getAll();
-    res.status(200).json(data);
+router.get('/cities', async (_req, res) => {
+    const db = await getDb();
+    res.json(await listCities(db));
 });
-
 
 router.get('/:id', async (req, res) => {
     const id = req.params.id;

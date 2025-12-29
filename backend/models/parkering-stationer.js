@@ -76,8 +76,18 @@ const parkering_Station = {
     } finally {
         await db.client.close();
     }
-}
+},
 
+    listParkingStations: async function listParkingStations() {
+        let db = await database.getDb();
+        const docs = await db.collection("parkingStations").find({}).toArray();
+        return docs.map((d) => ({
+            id: String(d._id),
+            name: d.name,
+            latitude: d.latitude,
+            longitude: d.longitude,
+        }));
+    }
 };
 
 export default parkering_Station;

@@ -76,8 +76,16 @@ const städer = {
     } finally {
         await db.client.close();
     }
-}
+},
 
+    listCities: async function listCities() {
+        let db = await database.getDb();
+        const docs = await db.collection("cities").find({}).toArray();
+        return docs.map((d) => ({
+            id: String(d._id),
+            name: d.name,
+        }));
+    }
 };
 
 export default städer;
