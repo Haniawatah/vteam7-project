@@ -19,13 +19,24 @@ export const isAdmin = () => getStoredUser()?.role === 'admin';
 
 const storeAuth = (data: AuthResponse) => {
     localStorage.setItem('token', data.token);
-    localStorage.setItem('user', JSON.stringify(data.user));
+    console.log(data.token);
+    
+    // Decode the token and store the payload directly as user
+    const decodedToken = JSON.parse(atob(data.token.split('.')[1]));
+
+    console.log("-----------");
+    console.log(decodedToken);
+    
+    localStorage.setItem('user', JSON.stringify(decodedToken));
 };
 
 export const login = async (email: string, password: string) => {
     try {
-        const data = (await api.post('/auth/login', { email, password })) as AuthResponse;
+        const data = (await api.post('/login', { email, password })) as AuthResponse;
         storeAuth(data);
+        console.log(data);
+        console.log("test")
+        console.log(localStorage.getItem('user'))
         return data;
     } catch (error) {
         throw new Error(toMessage(error));
@@ -34,7 +45,10 @@ export const login = async (email: string, password: string) => {
 
 export const register = async (userData: { email: string; password: string; name?: string }) => {
     try {
-        const data = (await api.post('/auth/register', userData)) as AuthResponse;
+        console.log("-------------------")
+        console.log(userData)
+        console.log("userdata")
+        const data = (await api.post('/register', userData)) as AuthResponse;
         storeAuth(data);
         return data;
     } catch (error) {

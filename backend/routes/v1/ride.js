@@ -1,105 +1,94 @@
 import express from 'express';
-import crypto from 'crypto';
-import { db, ensureSeeded } from '../../database.js';
-import { getDb } from '../../database.js';
-import { createRide, endRide, getRideById, listRideHistoryByUser } from '../../models/ride.js';
-import { getUserDocByToken, toUserDto, authenticateUser } from '../../models/user.js';
+import elsparkcyklar from '../../models/elsparkcykel.js';
+import rideLog from '../../models/ride.js';
+
+import { checkToken } from '../../middleware/utils.js';
 
 const router = express.Router();
 
-async function requireAuth(req, res, next) {
-    const auth = req.headers.authorization || '';
-    const token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
-    if (!token) return res.status(401).json({ error: 'Unauthorized' });
+router.use(checkToken);
 
-    const db = await getDb();
-    const userDoc = await getUserDocByToken(db, token);
-    if (!userDoc) return res.status(401).json({ error: 'Unauthorized' });
 
-    req.user = toUserDto(userDoc);
-    next();
-}
+// GET all parking stations
+router.get('/', async (req, res) => {
+    const data = await elsparkcyklar.getAll();
+    console.log("hej")
+    res.status(200).json(data);
+});
 
-router.post('/rides', authenticateUser, async (req, res) => {
-    try {
-        const { scooterId } = req.body ?? {};
-        if (!scooterId) return res.status(400).json({ error: 'scooterId is required' });
-        const ride = await createRide({ userId: req.user._id, scooterId });
-        res.status(201).json(ride);
-    } catch (e) {
-        res.status(400).json({ error: e?.message || 'Failed to create ride' });
+
+router.get('/:id', async (req, res) => {
+    const id = req.params.id;
+    const doc = await rideLog.getAll();
+
+    return res.json({ doc });
+});
+
+
+
+router.post('/start/:scooterId', async (req, res) => {
+    const id = req.params.scooterId;
+
+    let newData = await elsparkcyklar.getOne(id);
+
+    const currentDateTime = new Date().toISOString();
+
+    let test = {
+        user_id: req.user.user_id,
+        scooterId: id,
+        start_location: newData.position,
+        start_time: currentDateTime,
+        price: 5,
+        status: 'active'
     }
+
+    const data = await rideLog.addOne(test);
+
+    const testData = await rideLog.getOne(data.insertedId);
+
+    const updatedScooter = await elsparkcyklar.startLog(id, testData);
+
+    console.log(testData);
+    console.log("----------------t----------------------")
+
+    console.log(updatedScooter);
+
+    res.status(200).json({ data });
+
 });
 
-router.get('/rides/active/:rideId', authenticateUser, async (req, res) => {
-    const ride = await getRideById(req.params.rideId);
-    if (!ride) return res.status(404).json({ error: 'No active ride found' });
-    res.json(ride);
-});
+// End a ride
+router.post('/end/:scooterId', async (req, res) => {
+    const id = req.params.scooterId;
 
-router.put('/rides/end/:rideId', authenticateUser, async (req, res) => {
-    const ride = await endRide(req.params.rideId, req.user._id);
-    if (!ride) return res.status(404).json({ error: 'Ride not found' });
-    res.json(ride);
-});
 
-router.get('/rides/history', authenticateUser, async (req, res) => {
-    res.json(await listRideHistoryByUser(req.user.id));
-});
+    let newData = await elsparkcyklar.getOne(id);
 
-router.post('/', (req, res) => {
-    ensureSeeded();
-    const { scooterId } = req.body || {};
-    const scooter = db.scooters.find((s) => s.id === scooterId);
-    if (!scooter) return res.status(400).json({ error: 'Invalid scooterId' });
-    if (scooter.status !== 'available') return res.status(409).json({ error: 'Scooter not available' });
+    const currentDateTime = new Date().toISOString();
 
-    scooter.status = 'rented';
+    try {
+        let rideData = {
+            logId: '695310fa74de3a9f9b64b8b7',
+            end_location: newData.position ,
+            end_time: currentDateTime,
+            price: 25,
+            status: 'Complete'
+        };
 
-    const ride = {
-        id: crypto.randomUUID(),
-        scooterId,
-        startTime: new Date().toISOString(),
-        status: 'active',
-    };
+        // End the ride and update the log
+        const data = await rideLog.updateLog(rideData);
 
-    db.rides.push(ride);
-    res.status(201).json(ride);
-});
+        const updatedLog = await elsparkcyklar.endLog(id, rideData);
 
-router.get('/active/:rideId', (req, res) => {
-    ensureSeeded();
-    const ride = db.rides.find((r) => r.id === req.params.rideId && r.status === 'active');
-    if (!ride) return res.status(404).json({ error: 'Not found' });
-    res.json(ride);
-});
+        console.log(data);
+        console.log("------------------te--------------------")
+        console.log(updatedLog);
 
-router.put('/end/:rideId', (req, res) => {
-    ensureSeeded();
-    const ride = db.rides.find((r) => r.id === req.params.rideId);
-    if (!ride) return res.status(404).json({ error: 'Not found' });
-
-    ride.status = 'ended';
-    ride.endTime = new Date().toISOString();
-
-    const scooter = db.scooters.find((s) => s.id === ride.scooterId);
-    if (scooter) scooter.status = 'available';
-
-    res.json(ride);
-});
-
-router.get('/history', (req, res) => {
-    ensureSeeded();
-    const ended = db.rides
-        .filter((r) => r.status === 'ended')
-        .map((r) => ({
-            id: r.id,
-            scooterId: r.scooterId,
-            date: r.endTime || r.startTime,
-            duration: 0,
-            cost: 0,
-        }));
-    res.json(ended);
+        res.status(200).json({ message: "Ride ended successfully", updatedLog });
+    } catch (e) {
+        console.error("Error ending ride:", e);
+        res.status(500).json({ error: "Error ending the ride" });
+    }
 });
 
 export default router;

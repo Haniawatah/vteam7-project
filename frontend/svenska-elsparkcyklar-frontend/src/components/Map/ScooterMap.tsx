@@ -2,11 +2,22 @@ import React, { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { fetchScooters } from '../../services/scooters';
 import { Scooter } from '../../types';
+import L from 'leaflet';
 
 type Props = {
     setScooterId?: (id: string) => void;
     height?: number | string; // UX: allow parent to control map height
 };
+
+// Custom marker icon
+const defaultIcon = new L.Icon({
+    iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
+    iconSize: [25, 41], // Adjust the size of the marker
+    iconAnchor: [12, 41], // Anchor the icon to the bottom
+    popupAnchor: [1, -34], // Position of the popup
+    shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+    shadowSize: [41, 41],
+});
 
 const ScooterMap: React.FC<Props> = ({ setScooterId, height = 420 }) => {
     const [scooters, setScooters] = useState<Scooter[]>([]);
@@ -16,7 +27,8 @@ const ScooterMap: React.FC<Props> = ({ setScooterId, height = 420 }) => {
         const loadScooters = async () => {
             try {
                 const data = await fetchScooters();
-                setScooters(data);
+                console.log(data); // Log data to ensure it is being fetched
+                setScooters(data); // Store scooter data in the state
             } catch (error) {
                 console.error('Error fetching scooter data:', error);
             } finally {
@@ -25,39 +37,50 @@ const ScooterMap: React.FC<Props> = ({ setScooterId, height = 420 }) => {
         };
 
         loadScooters();
-    }, []);
+    }, []); // Empty dependency array ensures this effect runs only once (on mount)
 
     if (loading) return <div>Loading...</div>;
 
-    const getLatLng = (s: any): [number, number] => {
-        if (typeof s?.latitude === 'number' && typeof s?.longitude === 'number') return [s.latitude, s.longitude];
-        if (typeof s?.location?.latitude === 'number' && typeof s?.location?.longitude === 'number')
-            return [s.location.latitude, s.location.longitude];
-        return [59.3293, 18.0686];
+    // Utility function to extract LatLng from scooter data
+    const getLatLng = (scooter: any): [number, number] => {
+        console.log(scooter.position); // Log position data for debugging
+        if (Array.isArray(scooter.position) && scooter.position.length === 2) {
+            return [scooter.position[0], scooter.position[1]];
+        }
+
+        // Default position (fallback if position is not available)
+        return [59.3293, 18.0686]; // Coordinates for Stockholm (fallback)
     };
 
     return (
         <MapContainer
-            center={[59.3293, 18.0686]}
-            zoom={13}
+            center={[59.3293, 18.0686]} // Default center (Stockholm)
+            zoom={13} // Zoom level
             style={{ height, width: '100%' }}
         >
             <TileLayer
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             />
+            
             {scooters.map((scooter: any) => (
                 <Marker
-                    key={scooter.id}
-                    position={getLatLng(scooter)}
+                    key={scooter._id} // Use _id for key to ensure unique marker
+                    position={getLatLng(scooter)} // Get correct lat, lng from the scooter
+                    icon={defaultIcon} // Set the custom icon here
                     eventHandlers={{
-                        click: () => setScooterId?.(scooter.id),
+                        click: () => {
+                            console.log(scooter._id); // Logs "Hello" when a marker is clicked
+                            setScooterId?.(scooter._id); // Also sets the scooterId
+                        },
                     }}
                 >
                     <Popup>
-                        Scooter ID: {scooter.id}
+                        <strong>Scooter ID:</strong> {scooter.name}
                         <br />
-                        Status: {scooter.status}
+                        <strong>Status:</strong> {scooter.status}
+                        <br />
+                        <strong>Battery:</strong> {scooter.battery}%
                     </Popup>
                 </Marker>
             ))}

@@ -3,9 +3,11 @@
 import database from '../database.js'
 import { ObjectId } from 'mongodb';
 
-const parkering_Station = {
+const ParkeringStation = {
     getAll: async function getAll() {
         let db = await database.getDb();
+        console.log(db.databaseName);  // This should print the correct database name
+        console.log(Object.keys(db.collections)); 
 
         try {
             return await db.collections.parkeringStation.find().toArray();
@@ -35,10 +37,20 @@ const parkering_Station = {
         let db = await database.getDb();
 
         try {
+            //Hittar iden som passar med staden
+            const stadName = await db.collections.städer.findOne(
+                { namn: body.stad },
+                {
+                    collation: { locale: "sv", strength: 2 }
+                }
+            );
+
+
             return await db.collections.parkeringStation.insertOne({
-                title: body.title,
-                content: body.content,
-                allowed_users: body.allowed_users || []
+                name: body.name,
+                stad_id: stadName._id,
+                zone: body.zone || {},
+                elsparkcyklar: body.elsparkcyklar || {}
             });
         } catch (e) {
             console.error(e);
@@ -53,11 +65,20 @@ const parkering_Station = {
         console.log(body.content);
 
         try {
+            //Hittar iden som passar med staden
+            const stadName = await db.collections.städer.findOne(
+                { namn: body.stad },
+                {
+                    collation: { locale: "sv", strength: 2 }
+                }
+            );
+
             return await db.collections.parkeringStation.updateOne({_id: new ObjectId(body.id)},
             { $set: { 
-                title: body.title, 
-                content: body.content,
-                allowed_users: body.allowed_users
+                name: body.name,
+                stad_id: stadName._id,
+                zone: body.zone,
+                elsparkcyklar: body.elsparkcyklar
             } });
         } catch (e) {
             console.error(e);
@@ -66,32 +87,19 @@ const parkering_Station = {
         }
     },
 
-    getByUser: async function getByUser(email) {
-    let db = await database.getDb();
-    try {
-        return await db.collections.parkeringStation.find({ allowed_users: email }).toArray();
-    } catch (e) {
-        console.error(e);
-        return [];
-    } finally {
-        await db.client.close();
-    }
-},
-
-    listParkingStations: async function listParkingStations() {
+    getByName: async function (namn) {
         let db = await database.getDb();
-        const docs = await db.collection("parkingStations").find({}).toArray();
-        return docs.map((d) => ({
-            id: String(d._id),
-            name: d.name,
-            latitude: d.latitude,
-            longitude: d.longitude,
-        }));
+
+        try {
+            return await db.collections.parkeringStation.findOne({ namn });
+        } catch (e) {
+            console.error(e);
+            return null;
+        } finally {
+            await db.client.close();
+        }
     }
+
 };
 
-export function listParkingZones() {
-  return [];
-}
-
-export default parkering_Station;
+export default ParkeringStation;

@@ -1,73 +1,47 @@
-import { Router } from 'express';
-import {
-  authenticateUser,
-  requireAdmin,
-  registerUser,
-  loginUser,
-  loginAdmin,
-  logoutUser,
-  listUsers,
-  getPaymentInfo,
-  updatePaymentInfo,
-} from '../../models/user.js';
+import express from 'express';
+import user from '../../models/user.js';
 
-const router = Router();
+import { checkToken } from '../../middleware/utils.js';
 
-// Auth
-router.post('/auth/register', async (req, res) => {
-  try {
-    const { email, password, name } = req.body ?? {};
-    const data = await registerUser({ email, password, name });
-    res.json(data);
-  } catch (e) {
-    res.status(400).json({ error: e?.message || 'Registration failed' });
-  }
+const router = express.Router();
+
+router.use(checkToken);
+
+// GET all users
+router.get('/', async (req, res) => {
+    const data = await user.getAll();
+    res.status(200).json(data);
 });
 
-router.post('/auth/login', async (req, res) => {
-  try {
-    const { email, password } = req.body ?? {};
-    const data = await loginUser({ email, password });
-    res.json(data);
-  } catch (e) {
-    res.status(401).json({ error: e?.message || 'Login failed' });
-  }
+
+router.post("/register", async (req, res) => {
+    console.log(req)
+    const result = await user.register(req.body);
+    res.status(201).json({ result });
 });
 
-router.post('/auth/logout', authenticateUser, async (req, res) => {
-  await logoutUser(req.token);
-  res.json({ ok: true });
+
+
+router.get('/profile', async (req, res) => {
+    const userEmail = req.user.email;
+
+    console.log(req)
+    const data = await user.getOne(userEmail);
+    
+    if (!data) {
+        return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+
+    res.status(200).json({ data });
+
 });
 
-router.post('/auth/admin/login', async (req, res) => {
-  try {
-    const { email, password } = req.body ?? {};
-    const data = await loginAdmin({ email, password });
-    res.json(data);
-  } catch (e) {
-    res.status(401).json({ error: e?.message || 'Login failed' });
-  }
-});
+router.get('/:email', async (req, res) => {
+    const email = req.params.email;
+    const doc = await user.getOne(email);
 
-// Users
-router.get('/users', authenticateUser, requireAdmin, async (req, res) => {
-  const users = await listUsers();
-  res.json(users);
-});
-
-// Payment (me)
-router.get('/users/me/payment', authenticateUser, async (req, res) => {
-  const data = await getPaymentInfo(req.user._id);
-  res.json(data);
-});
-
-router.put('/users/me/payment', authenticateUser, async (req, res) => {
-  try {
-    const data = await updatePaymentInfo(req.user._id, req.body ?? {});
-    res.json(data);
-  } catch (e) {
-    res.status(400).json({ error: e?.message || 'Update failed' });
-  }
+    return res.json({ doc });
 });
 
 export default router;

@@ -1,43 +1,20 @@
-import dotenv from 'dotenv';
-dotenv.config();
+import 'dotenv/config';
+import express from 'express';
+import v1Routes from './routes/app.js';
 
-import app from './routes/app.js';
-import { closeDb } from './database.js';
-import { ensureAdminFromEnv } from './models/user.js';
+import cors from 'cors';
 
-const port = Number(process.env.PORT || 3000);
+const server = express();
+const port = process.env.PORT || 3000;
 
-// CHANGE: keep a reference to the server + log bind errors (otherwise process may exit silently)
-const server = app.listen(port, () => {
-  console.log(`Backend listening on http://localhost:${port}`);
-});
+server.use(cors());
 
-server.on('error', (err) => {
-  console.error('Server failed to start:', err);
-  process.exitCode = 1;
-});
+server.use(express.json());
 
-// CHANGE: graceful shutdown (also makes behavior deterministic in WSL/CI)
-async function shutdown(signal) {
-  try {
-    console.log(`Shutting down (${signal})...`);
-    await new Promise((resolve) => server.close(resolve));
-    await closeDb();
-  } catch (e) {
-    console.error('Shutdown error:', e);
-    process.exitCode = 1;
-  } finally {
-    process.exit();
-  }
-}
 
-process.on('SIGINT', () => shutdown('SIGINT'));
-process.on('SIGTERM', () => shutdown('SIGTERM'));
+server.use('/v1', v1Routes);
 
-// CHANGE: ensure an admin user exists (no-op if env vars are missing)
-ensureAdminFromEnv().catch((e) => {
-  console.error('Admin seed failed:', e);
-});
 
-// If you had `export default app;` keep it:
+const app = server.listen(port, () => console.log(`Example app listening on port ${port}!`));
+
 export default app;

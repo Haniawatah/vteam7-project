@@ -36,9 +36,8 @@ const städer = {
 
         try {
             return await db.collections.städer.insertOne({
-                title: body.title,
-                content: body.content,
-                allowed_users: body.allowed_users || []
+                name: body.name,
+                position: body.positions
             });
         } catch (e) {
             console.error(e);
@@ -55,9 +54,8 @@ const städer = {
         try {
             return await db.collections.städer.updateOne({_id: new ObjectId(body.id)},
             { $set: { 
-                title: body.title, 
-                content: body.content,
-                allowed_users: body.allowed_users
+                name: body.name,
+                position: body.positions
             } });
         } catch (e) {
             console.error(e);
@@ -66,30 +64,19 @@ const städer = {
         }
     },
 
-    getByUser: async function getByUser(email) {
-    let db = await database.getDb();
-    try {
-        return await db.collections.städer.find({ allowed_users: email }).toArray();
-    } catch (e) {
-        console.error(e);
-        return [];
-    } finally {
-        await db.client.close();
-    }
-},
-
-    listCities: async function listCities() {
+    getByName: async function (namn) {
         let db = await database.getDb();
-        const docs = await db.collection("cities").find({}).toArray();
-        return docs.map((d) => ({
-            id: String(d._id),
-            name: d.name,
-        }));
+
+        try {
+            return await db.collections.städer.findOne({ namn });
+        } catch (e) {
+            console.error(e);
+            return null;
+        } finally {
+            await db.client.close();
+        }
     }
+
 };
 
 export default städer;
-
-export function listCities() {
-  return [];
-}

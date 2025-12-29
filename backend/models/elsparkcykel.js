@@ -1,66 +1,170 @@
+//import openDb from './db/database.mjs';
+
+import database from '../database.js'
+import rideLog from '../models/ride.js';
 import { ObjectId } from 'mongodb';
-import { getDb } from '../database.js';
 
-const SCOOTERS = 'scooters';
-const now = () => new Date();
+const elsparkcyklar = {
+    getAll: async function getAll() {
+        let db = await database.getDb();
 
-const toScooter = (s) => ({
-  id: String(s._id),
-  model: s.model ?? '',
-  status: s.status ?? 'available',
-  latitude: typeof s.latitude === 'number' ? s.latitude : undefined,
-  longitude: typeof s.longitude === 'number' ? s.longitude : undefined,
-  location: s.location ?? undefined,
-});
+        try {
+            return await db.collections.elsparkcyklar.find().toArray();
+        } catch (e) {
+            console.error(e);
 
-export async function listScooters() {
-  const db = await getDb();
-  const rows = await db.collection(SCOOTERS).find({}).toArray();
-  return rows.map(toScooter);
-}
+            return [];
+        } finally {
+            await db.client.close();
+        }
+    },
 
-export async function getScooter(id) {
-  const db = await getDb();
-  const row = await db.collection(SCOOTERS).findOne({ _id: new ObjectId(id) });
-  return row ? toScooter(row) : null;
-}
+    getOne: async function getOne(id) {
+        let db = await database.getDb();
+        try {
+            return await db.collections.elsparkcyklar.findOne({_id: new ObjectId(id)});
+        } catch (e) {
+            console.error(e);
 
-export async function createScooter(data) {
-  const db = await getDb();
-  const doc = {
-    model: data?.model ?? 'Generic',
-    status: data?.status ?? 'available',
-    latitude: typeof data?.latitude === 'number' ? data.latitude : undefined,
-    longitude: typeof data?.longitude === 'number' ? data.longitude : undefined,
-    location: data?.location,
-    createdAt: now(),
-  };
-  const { insertedId } = await db.collection(SCOOTERS).insertOne(doc);
-  return await getScooter(insertedId);
-}
+            return {};
+        } finally {
+            await db.client.close();
+        }
+    },
 
-export async function updateScooter(id, data) {
-  const db = await getDb();
-  await db.collection(SCOOTERS).updateOne(
-    { _id: new ObjectId(id) },
-    { $set: { ...data, updatedAt: now() } }
-  );
-  return await getScooter(id);
-}
+    addOne: async function addOne(body) {
+        let db = await database.getDb();
 
-export async function removeScooter(id) {
-  const db = await getDb();
-  await db.collection(SCOOTERS).deleteOne({ _id: new ObjectId(id) });
-  return { ok: true };
-}
+        try {
+            return await db.collections.elsparkcyklar.insertOne({
+                name: body.name,
+                position: body.position|| [],
+                status: body.status,
+                battery: body.battery,
+                logs: body.logs|| []
+            });
+        } catch (e) {
+            console.error(e);
+        } finally {
+            db.client.close();
+        }
+    },
 
-export async function setScooterStatus(id, status) {
-  const db = await getDb();
-  await db.collection(SCOOTERS).updateOne(
-    { _id: new ObjectId(id) },
-    { $set: { status, updatedAt: now() } }
-  );
-}
+    update: async function update(body) {
+        let db = await database.getDb();
 
-// If your existing function is named `removeScooter`, keep it and export an alias:
-export { removeScooter as deleteScooter };
+        console.log(body.content);
+
+        try {
+            return await db.collections.elsparkcyklar.updateOne({_id: new ObjectId(body.id)},
+            { $set: { 
+                name: body.name,
+                position: body.position,
+                status: body.status,
+                battery: body.battery,
+                logs: body.logs
+            } });
+        } catch (e) {
+            console.error(e);
+        } finally {
+            await db.client.close();
+        }
+    },
+
+    getByName: async function getOne(bikeName) {
+        let db = await database.getDb();
+        try {
+            return await db.collections.elsparkcyklar.findOne({name: bikeName});
+        } catch (e) {
+            console.error(e);
+
+            return {};
+        } finally {
+            await db.client.close();
+        }
+    },
+
+    updatePosition: async function (scooterId, position) {
+    let db = await database.getDb();
+    try {
+        return await db.collections.elsparkcyklar.updateOne(
+            { _id: new ObjectId(scooterId) },
+            { $set: { position: position } }
+        );
+    } catch (e) {
+        console.error(e);
+    } finally {
+        await db.client.close();
+    }
+    },
+
+    startLog: async function (scooterId, body) {
+        let db = await database.getDb();
+        try {
+            // Create a new log entry with start details
+            const newLog = {
+                log_id: body._id.toString(),
+                user_id: body.user_id,
+                scooterId: body.scooterId,
+                start_location: body.start_location,
+                end_location: body.end_location || [],
+                start_time: body.start_time,
+                end_time: body.end_time || 0,
+                price: body.price || 0,
+                speed: body.speed || 0,
+                status: body.status || 'active'
+            };
+
+            // Push the new log into the scooter's logs array
+            return await db.collections.elsparkcyklar.updateOne(
+                { _id: new ObjectId(scooterId) },
+                { $push: { logs: newLog } }
+            );
+        } catch (e) {
+            console.error(e);
+        } finally {
+            await db.client.close();
+        }
+    },
+
+    endLog: async function (scooterId, body) {
+        let db = await database.getDb();
+        try {
+            // Ensure that scooterId is an ObjectId
+            const objectId = new ObjectId(scooterId);
+
+            console.log("sssssssssssssssssss");
+            console.log(body.logId);
+
+            // Updaterar en specifik log för en elsparkcykel
+            const result = await db.collections.elsparkcyklar.updateOne(
+                { 
+                    _id: objectId,
+                    "logs.log_id": body.logId
+                },
+                {
+                    $set: {
+                        "logs.$.end_location": body.end_location,
+                        "logs.$.end_time": body.end_time,
+                        "logs.$.price": body.price,
+                        "logs.$.status": "Completed"
+                    }
+                }
+            );
+
+            console.log(result);
+
+            return result;
+
+        } catch (e) {
+            console.error(e);
+        } finally {
+            await db.client.close();
+        }
+    }
+
+
+
+};
+
+export default elsparkcyklar;

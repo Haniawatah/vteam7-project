@@ -1,56 +1,43 @@
 import express from 'express';
-import crypto from 'crypto';
-import { db, ensureSeeded, getDb } from '../../database.js';
-import { createScooter, getScooter, listScooters, updateScooter, removeScooter } from '../../models/elsparkcykel.js';
-import { authenticateUser, requireAdmin } from '../../models/user.js';
+import elsparkcyklar from '../../models/elsparkcykel.js';
+
+import { checkToken } from '../../middleware/utils.js';
 
 const router = express.Router();
 
-// Seed database if empty
-async function seedIfEmpty(db) {
-    const count = await db.collection('scooters').countDocuments();
-    if (count > 0) return;
-    const now = new Date();
-    await db.collection('scooters').insertMany([
-        { model: 'Standard', status: 'available', latitude: 59.3293, longitude: 18.0686, batteryLevel: 88, createdAt: now, updatedAt: now },
-        { model: 'Standard', status: 'available', latitude: 59.334, longitude: 18.06, batteryLevel: 72, createdAt: now, updatedAt: now },
-        { model: 'Standard', status: 'available', latitude: 59.322, longitude: 18.08, batteryLevel: 64, createdAt: now, updatedAt: now },
-    ]);
-}
+router.use(checkToken);
 
-// GET all scooters
-router.get('/scooters', async (_req, res) => {
-    const db = await getDb();
-    if (process.env.NODE_ENV !== 'production') await seedIfEmpty(db);
-    res.json(await listScooters(db));
+
+// GET all charging stations
+router.get('/', async (req, res) => {
+    const data = await elsparkcyklar.getAll();
+    return res.json({ data });
 });
 
 // Create a new scooter
-router.post('/scooters', authenticateUser, requireAdmin, async (req, res) => {
-    const db = await getDb();
-    res.status(201).json(await createScooter(db, req.body));
+router.post('/', async (req, res) => {
+    const data = await elsparkcyklar.addOne(req.body)
+    res.status(201).json({ data });
 });
 
-// Get a single scooter by ID
-router.get('/scooters/:id', async (req, res) => {
-    const db = await getDb();
-    const scooter = await getScooter(db, req.params.id);
-    if (!scooter) return res.status(404).json({ error: 'Not found' });
-    res.json(scooter);
+//Get a specific scooter
+router.get('/:id', async (req, res) => {
+    const id = req.params.id;
+    const data = await elsparkcyklar.getOne(id);
+
+    return res.json({ data });
 });
+
 
 // Update a scooter by ID
-router.put('/scooters/:id', authenticateUser, requireAdmin, async (req, res) => {
-    const db = await getDb();
-    const scooter = await updateScooter(db, req.params.id, req.body);
-    if (!scooter) return res.status(404).json({ error: 'Not found' });
-    res.json(scooter);
+router.put('/:id', async (req, res) => {
+    const data = await elsparkcyklar.update(req.body)
+    res.status(201).json({ data });
 });
 
 // Delete a scooter by ID
-router.delete('/scooters/:id', authenticateUser, requireAdmin, async (req, res) => {
-    const db = await getDb();
-    const ok = await removeScooter(db, req.params.id);
+router.delete('/:id', async (req, res) => {
+    const ok = await deleteScooter(db, req.params.id);
     if (!ok) return res.status(404).json({ error: 'Not found' });
     res.json({ ok: true });
 });

@@ -76,29 +76,8 @@ const invoices = {
     } finally {
         await db.client.close();
     }
-},
+}
 
-    listInvoicesByUser: async function listInvoicesByUser(userId) {
-        let db = await database.getDb();
-        const docs = await db.collection("invoices").find({ userId: String(userId) }).sort({ createdAt: -1 }).toArray();
-        return docs.map((d) => ({
-            id: String(d._id),
-            userId: d.userId,
-            amount: d.amount,
-            date: d.date || d.createdAt,
-            status: d.status || "issued",
-        }));
-    }
 };
-
-export async function listInvoicesForUser(userId) {
-  // placeholder until invoices are implemented
-  return [];
-}
-
-// Compatibility: some routes import this name
-export async function listInvoicesByUser(userId) {
-  return listInvoicesForUser(userId);
-}
 
 export default invoices;

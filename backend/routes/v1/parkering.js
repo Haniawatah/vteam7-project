@@ -1,24 +1,26 @@
 import express from 'express';
-import { getDb } from '../../database.js';
-import { listParkingStations, listParkingZones } from '../../models/parkering-stationer.js';
+import ParkeringStation from '../../models/parkering-stationer.js';
+
+import { checkToken } from '../../middleware/utils.js';
 
 const router = express.Router();
 
+router.use(checkToken);
+
+
 // GET all parking stations
-router.get('/parking-stations', async (_req, res) => {
-    const db = await getDb();
-    res.json(await listParkingStations(db));
+router.get('/', async (req, res) => {
+    const data = await ParkeringStation.getAll();
+    console.log("hej")
+    res.status(200).json(data);
 });
+
 
 router.get('/:id', async (req, res) => {
     const id = req.params.id;
-    const doc = await parkering_Station.getOne(id);
+    const doc = await ParkeringStation.getOne(id);
 
     return res.json({ doc });
-});
-
-router.get('/parking-zones', (req, res) => {
-    res.json(listParkingZones());
 });
 
 export default router;

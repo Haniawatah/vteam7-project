@@ -1,0 +1,34 @@
+import passport from "passport";
+import { Strategy as GoogleStrategy } from "passport-google-oauth20";
+import user from "../models/user.js";
+
+passport.use(new GoogleStrategy(
+    {
+        clientID: process.env.GOOGLE_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        callbackURL: "/v1/auth/google/callback",
+    },
+    async (accessToken, refreshToken, profile, done) => {
+        try {
+        const email = profile.emails[0].value;
+
+        let account = await user.getOne(email);
+
+        if (!account) {
+            account = await user.register({
+            email,
+            name: profile.displayName,
+            wallet: 0,
+            roll: "user",
+            oauthProvider: "google",
+            });
+        }
+
+        return done(null, account);
+        } catch (err) {
+        return done(err, null);
+        }
+    }
+    ));
+
+export default passport;

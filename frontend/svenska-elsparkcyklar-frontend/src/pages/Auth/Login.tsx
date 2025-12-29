@@ -8,6 +8,8 @@ const Login = () => {
     const [error, setError] = useState('');
     const navigate = useNavigate();
 
+    const googleAuthUrl = 'http://localhost:3000/v1/auth/google';
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
@@ -18,6 +20,10 @@ const Login = () => {
         } catch {
             setError('Invalid email or password');
         }
+    };
+
+    const googleLogin = () => {
+        window.location.href = googleAuthUrl;
     };
 
     return (
@@ -44,6 +50,10 @@ const Login = () => {
                     />
                 </div>
                 <button type="submit">Login</button>
+
+            <button onClick={googleLogin}>
+                Continue with Google
+            </button>
             </form>
         </div>
     );
