@@ -1,23 +1,28 @@
 import express from 'express';
 
 import userRouter from './v1/user.js';
-import scooterRouter from './v1/elsparkcyklar.js';
-import rideRouter from './v1/ride.js';
-import invoicesRouter from './v1/invoices.js';
-import chargingRouter from './v1/laddning.js';
-import parkingRouter from './v1/parkering.js';
-import citiesRouter from './v1/städer.js';
+import scootersRouter from './v1/elsparkcyklar.js';
+import ridesRouter from './v1/ride.js';
+import invoicesRouter from './v1/invoices.js'; // also hosts /reports (see file)
 
-const router = express.Router();
+const app = express();
 
-router.get('/v1/health', (_req, res) => res.json({ ok: true }));
+app.use(express.json());
 
-router.use('/v1', userRouter);
-router.use('/v1', scooterRouter);
-router.use('/v1', rideRouter);
-router.use('/v1', invoicesRouter);
-router.use('/v1', chargingRouter);
-router.use('/v1', parkingRouter);
-router.use('/v1', citiesRouter);
+// Minimal CORS (no extra dependency)
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', process.env.CORS_ORIGIN || '*');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  next();
+});
 
-export default router;
+app.get('/v1/health', (req, res) => res.json({ ok: true }));
+
+app.use('/v1', userRouter);
+app.use('/v1', scootersRouter);
+app.use('/v1', ridesRouter);
+app.use('/v1', invoicesRouter);
+
+export default app;

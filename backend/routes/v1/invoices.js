@@ -18,9 +18,9 @@ async function requireAuth(req, res, next) {
   next();
 }
 
+// Minimal placeholder invoices endpoint (safe to expand later)
 router.get("/invoices", requireAuth, async (req, res) => {
-  const db = await getDb();
-  res.json(await listInvoicesByUser(db, req.user.id));
+  res.json([]);
 });
 
 export default router;

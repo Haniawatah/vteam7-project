@@ -1,35 +1,43 @@
-import 'dotenv/config';
-import express from 'express';
-import v1Routes from './routes/app.js';
+import dotenv from 'dotenv';
+dotenv.config();
 
-const app = express();
-const port = process.env.PORT || 3000;
+import app from './routes/app.js';
+import { closeDb } from './database.js';
+import { ensureAdminFromEnv } from './models/user.js';
 
-app.use(express.json());
+const port = Number(process.env.PORT || 3000);
 
-// minimal CORS for local dev
-app.use((req, res, next) => {
-    res.setHeader('Access-Control-Allow-Origin', process.env.CORS_ORIGIN || '*');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
-    if (req.method === 'OPTIONS') return res.status(204).end();
-    next();
+// CHANGE: keep a reference to the server + log bind errors (otherwise process may exit silently)
+const server = app.listen(port, () => {
+  console.log(`Backend listening on http://localhost:${port}`);
 });
 
-app.get('/', (req, res) => {
-    res.type('text').send('Backend is running. Try /v1/health');
+server.on('error', (err) => {
+  console.error('Server failed to start:', err);
+  process.exitCode = 1;
 });
 
-app.get('/v1/health', (req, res) => res.json({ ok: true }));
+// CHANGE: graceful shutdown (also makes behavior deterministic in WSL/CI)
+async function shutdown(signal) {
+  try {
+    console.log(`Shutting down (${signal})...`);
+    await new Promise((resolve) => server.close(resolve));
+    await closeDb();
+  } catch (e) {
+    console.error('Shutdown error:', e);
+    process.exitCode = 1;
+  } finally {
+    process.exit();
+  }
+}
 
-app.use('/v1', v1Routes);
+process.on('SIGINT', () => shutdown('SIGINT'));
+process.on('SIGTERM', () => shutdown('SIGTERM'));
 
-app.use((err, _req, res, _next) => {
-    console.error(err);
-    res.status(500).json({ error: 'Internal Server Error' });
+// CHANGE: ensure an admin user exists (no-op if env vars are missing)
+ensureAdminFromEnv().catch((e) => {
+  console.error('Admin seed failed:', e);
 });
 
-
-const server = app.listen(port, () => console.log(`Backend listening on http://localhost:${port}`));
-
-export default server;
+// If you had `export default app;` keep it:
+export default app;

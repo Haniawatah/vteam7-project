@@ -89,3 +89,7 @@ const städer = {
 };
 
 export default städer;
+
+export function listCities() {
+  return [];
+}

@@ -78,15 +78,8 @@ const laddnings_station = {
     }
 },
 
-    listChargingStations: async function listChargingStations() {
-        let db = await database.getDb();
-        const docs = await db.collection("chargingStations").find({}).toArray();
-        return docs.map((d) => ({
-            id: String(d._id),
-            name: d.name,
-            latitude: d.latitude,
-            longitude: d.longitude,
-        }));
+    listChargingStations: function listChargingStations() {
+        return [];
     }
 };
 

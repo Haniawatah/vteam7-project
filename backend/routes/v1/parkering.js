@@ -1,6 +1,6 @@
 import express from 'express';
 import { getDb } from '../../database.js';
-import { listParkingStations } from '../../models/parkering-stationer.js';
+import { listParkingStations, listParkingZones } from '../../models/parkering-stationer.js';
 
 const router = express.Router();
 
@@ -15,6 +15,10 @@ router.get('/:id', async (req, res) => {
     const doc = await parkering_Station.getOne(id);
 
     return res.json({ doc });
+});
+
+router.get('/parking-zones', (req, res) => {
+    res.json(listParkingZones());
 });
 
 export default router;

@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import { db, ensureSeeded } from '../../database.js';
 import { getDb } from '../../database.js';
 import { createRide, endRide, getRideById, listRideHistoryByUser } from '../../models/ride.js';
-import { getUserDocByToken, toUserDto } from '../../models/user.js';
+import { getUserDocByToken, toUserDto, authenticateUser } from '../../models/user.js';
 
 const router = express.Router();
 
@@ -20,37 +20,31 @@ async function requireAuth(req, res, next) {
     next();
 }
 
-router.post('/rides', requireAuth, async (req, res) => {
-    const db = await getDb();
+router.post('/rides', authenticateUser, async (req, res) => {
     try {
-        const ride = await createRide(db, { scooterId: req.body?.scooterId, userId: req.user.id });
+        const { scooterId } = req.body ?? {};
+        if (!scooterId) return res.status(400).json({ error: 'scooterId is required' });
+        const ride = await createRide({ userId: req.user._id, scooterId });
         res.status(201).json(ride);
     } catch (e) {
-        res.status(400).json({ error: String(e?.message || e) });
+        res.status(400).json({ error: e?.message || 'Failed to create ride' });
     }
 });
 
-router.get('/rides/active/:rideId', requireAuth, async (req, res) => {
-    const db = await getDb();
-    const ride = await getRideById(db, req.params.rideId);
-    if (!ride) return res.status(404).json({ error: 'Not found' });
-    if (ride.userId !== req.user.id) return res.status(403).json({ error: 'Forbidden' });
+router.get('/rides/active/:rideId', authenticateUser, async (req, res) => {
+    const ride = await getRideById(req.params.rideId);
+    if (!ride) return res.status(404).json({ error: 'No active ride found' });
     res.json(ride);
 });
 
-router.get('/rides/history', requireAuth, async (req, res) => {
-    const db = await getDb();
-    res.json(await listRideHistoryByUser(db, req.user.id));
+router.put('/rides/end/:rideId', authenticateUser, async (req, res) => {
+    const ride = await endRide(req.params.rideId, req.user._id);
+    if (!ride) return res.status(404).json({ error: 'Ride not found' });
+    res.json(ride);
 });
 
-router.put('/rides/end/:rideId', requireAuth, async (req, res) => {
-    const db = await getDb();
-    try {
-        const ride = await endRide(db, { rideId: req.params.rideId, userId: req.user.id });
-        res.json(ride);
-    } catch (e) {
-        res.status(400).json({ error: String(e?.message || e) });
-    }
+router.get('/rides/history', authenticateUser, async (req, res) => {
+    res.json(await listRideHistoryByUser(req.user.id));
 });
 
 router.post('/', (req, res) => {

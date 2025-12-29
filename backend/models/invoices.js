@@ -91,4 +91,14 @@ const invoices = {
     }
 };
 
+export async function listInvoicesForUser(userId) {
+  // placeholder until invoices are implemented
+  return [];
+}
+
+// Compatibility: some routes import this name
+export async function listInvoicesByUser(userId) {
+  return listInvoicesForUser(userId);
+}
+
 export default invoices;

@@ -90,4 +90,8 @@ const parkering_Station = {
     }
 };
 
+export function listParkingZones() {
+  return [];
+}
+
 export default parkering_Station;

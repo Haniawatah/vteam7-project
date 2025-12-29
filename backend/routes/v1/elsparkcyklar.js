@@ -1,7 +1,8 @@
 import express from 'express';
 import crypto from 'crypto';
 import { db, ensureSeeded, getDb } from '../../database.js';
-import { createScooter, deleteScooter, getScooter, listScooters, updateScooter } from '../../models/elsparkcykel.js';
+import { createScooter, getScooter, listScooters, updateScooter, removeScooter } from '../../models/elsparkcykel.js';
+import { authenticateUser, requireAdmin } from '../../models/user.js';
 
 const router = express.Router();
 
@@ -25,7 +26,7 @@ router.get('/scooters', async (_req, res) => {
 });
 
 // Create a new scooter
-router.post('/scooters', async (req, res) => {
+router.post('/scooters', authenticateUser, requireAdmin, async (req, res) => {
     const db = await getDb();
     res.status(201).json(await createScooter(db, req.body));
 });
@@ -39,7 +40,7 @@ router.get('/scooters/:id', async (req, res) => {
 });
 
 // Update a scooter by ID
-router.put('/scooters/:id', async (req, res) => {
+router.put('/scooters/:id', authenticateUser, requireAdmin, async (req, res) => {
     const db = await getDb();
     const scooter = await updateScooter(db, req.params.id, req.body);
     if (!scooter) return res.status(404).json({ error: 'Not found' });
@@ -47,9 +48,9 @@ router.put('/scooters/:id', async (req, res) => {
 });
 
 // Delete a scooter by ID
-router.delete('/scooters/:id', async (req, res) => {
+router.delete('/scooters/:id', authenticateUser, requireAdmin, async (req, res) => {
     const db = await getDb();
-    const ok = await deleteScooter(db, req.params.id);
+    const ok = await removeScooter(db, req.params.id);
     if (!ok) return res.status(404).json({ error: 'Not found' });
     res.json({ ok: true });
 });
