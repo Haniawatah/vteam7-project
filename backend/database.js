@@ -2,40 +2,44 @@ import 'dotenv/config';
 
 import { MongoClient, ServerApiVersion } from 'mongodb';
 
-const database = {
-    getDb: async function getDb () {
-    let dsn = `mongodb+srv://tiae24_db_user:${process.env.DB_PASS}@cluster0.5s8wzba.mongodb.net/vteam?retryWrites=true&w=majority&appName=text-editor&tls=true`;
+let clientPromise;
+let dbPromise;
 
+export async function getDb() {
+  if (!dbPromise) {
+    const url = process.env.MONGODB_URL || process.env.DATABASE_URL;
+    const dbName = process.env.MONGODB_DB || 'vteam7';
 
-        //if (process.env.NODE_ENV === 'test') {
-        //    dsn = "mongodb://localhost:27017/test";
-        //    console.log("hejsan")
-        //}
-
-        const client = new MongoClient(dsn, {
-            serverApi: {
-            version: ServerApiVersion.v1,
-            strict: true,
-            deprecationErrors: true,
-        }
-        });
-        const db = await client.db("vteam");
-
-        return {
-            client,
-            collections: {
-                users: db.collection("users"),
-                elsparkcyklar: db.collection("elsparkcyklar"),
-                insättningar: db.collection("insättningar"),
-                laddningsStation: db.collection("laddningsStation"),
-                parkeringStation: db.collection("parkeringStation"),
-                städer: db.collection("städer"),
-                åktur: db.collection("åktur"),
-                log: db.collection("log"),
-                invoices: db.collection("invoices"),
-            }
-        };
+    if (!url) {
+      throw new Error('Missing MONGODB_URL (or DATABASE_URL) in backend/.env');
     }
-};
 
-export default database;
+    clientPromise = clientPromise ?? new MongoClient(url).connect();
+    dbPromise = (await clientPromise).db(dbName);
+  }
+  return dbPromise;
+}
+
+// Backwards-compatible default export for older modules doing:
+//   import database from '../database.js'
+//   const db = await database.getDb()
+export default { getDb };
+
+let client;
+let db;
+
+export async function initDb() {
+  if (db) return db;
+
+  const uri = process.env.MONGODB_URI || process.env.MONGO_URI || '';
+  const dbName = process.env.MONGODB_DB || process.env.MONGO_DB || 'vteam7';
+
+  if (!uri) return null; // allow running without DB for endpoint-shape testing
+
+  client = client ?? new MongoClient(uri);
+  if (!client.topology?.isConnected?.()) {
+    await client.connect();
+  }
+  db = client.db(dbName);
+  return db;
+}

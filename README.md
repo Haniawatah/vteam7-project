@@ -1,50 +1,18 @@
 # vteam7-project
 
-Monorepo: **backend** (Express + MongoDB) and **frontend** (React + Vite).
+Backend (Express) + Frontend (React/Vite).
 
-## Quick start
+## What changed (recent)
 
-### Backend (port 3000)
-```bash
-cd backend
-npm install
-npm start
-```
+### Frontend
+- Admin dashboard: added a tabbed view with **Scooters / Users / Stations / Logs**.
+- Map: scooters are polled regularly, markers update without resetting the map view, and the UI shows small loading/error badges instead of crashing.
+- Profile: replaced the empty placeholder with a real profile page (account info, wallet/balance, ride summary + quick links).
+- UI: added CSS for the admin dashboard layout and profile page so they look consistent.
 
-Health:
-- http://localhost:3000/v1/health
-
-### Frontend (Vite port 5173/5174/…)
-```bash
-cd frontend/svenska-elsparkcyklar-frontend
-npm install
-npm run dev
-```
-
-The frontend proxies `/v1` to `http://localhost:3000`.
-
-## API used by the frontend
-- `POST /v1/auth/register`
-- `POST /v1/auth/login`
-- `POST /v1/auth/logout`
-- `GET /v1/users` (admin)
-- `GET/PUT /v1/users/me/payment`
-- `GET /v1/scooters`
-- `POST /v1/rides`
-- `GET /v1/rides/active/:rideId`
-- `GET /v1/rides/history`
-- `PUT /v1/rides/end/:rideId`
-- `GET /v1/reports` (admin)
-
-## Backend changes (added)
-- Added a MongoDB-based backend using `mongodb` + `express`.
-- Implemented basic auth (register/login/logout) with token sessions.
-- Implemented core REST endpoints used by the frontend:
-  - `/v1/scooters` (list/create/update/delete)
-  - `/v1/rides` (create ride, active ride, ride history, end ride)
-  - `/v1/users/me/payment` (get/update payment info)
-  - `/v1/reports` (admin reports)
-- Added `/v1/health` for integration testing.
+### Backend
+- Basic API wiring to support the UI endpoints listed below (plus fixes to avoid startup import/export errors).
+- Added/updated middleware helpers and route modules used by the admin UI.
 
 ## Run (dev)
 
@@ -54,66 +22,42 @@ cd backend
 npm install
 npm start
 ```
+Health: http://localhost:3000/v1/health
 
-Backend: http://localhost:3000  
-Health check: http://localhost:3000/v1/health
-
-## Login / Auth
-
-Base URL (backend): `http://localhost:3000`
-
-### User registration + login
-**Register**
-- `POST /v1/auth/register`
-- body: `{ "email": "...", "password": "...", "name": "..." }`
-
-**Login**
-- `POST /v1/auth/login`
-- body: `{ "email": "...", "password": "..." }`
-
-Response (both): `{ token: string, user: { id, email, name, role, ... } }`
-
-Example:
+### Frontend
 ```bash
-curl -s -X POST http://localhost:3000/v1/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"email":"user@example.com","password":"secret123","name":"User"}'
+cd frontend/svenska-elsparkcyklar-frontend
+npm install
+npm run dev
 ```
+Open the exact Vite URL it prints.
 
-```bash
-curl -s -X POST http://localhost:3000/v1/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"user@example.com","password":"secret123"}'
-```
+## Frontend ↔ Backend
 
-Use the token for protected routes:
-- header: `Authorization: Bearer <token>`
+The frontend proxies `/v1` to `http://localhost:3000`.
 
----
+Quick check (use your Vite port):
+- `http://localhost:5174/v1/health` → `{"ok":true}`
 
-### Admin login
-**Admin login endpoint**
-- `POST /v1/auth/admin/login`
-- body: `{ "email": "...", "password": "..." }`
-- Will fail unless the account has `role: "admin"`.
+## API used by the UI (v1)
 
-**How the admin account is created**
-On backend startup, the server runs `ensureAdminFromEnv()` which creates/updates an admin user from env vars:
+- Auth: `POST /auth/register`, `POST /auth/login`, `POST /auth/logout`
+- Scooters: `GET /scooters`
+- Rides: `POST /rides`, `GET /rides/active/:rideId`, `GET /rides/history`, `PUT /rides/end/:rideId`
+- Profile payment: `GET /users/me/payment`, `PUT /users/me/payment`
+- Admin: `GET /users`, `GET /stations`, `GET /reports`, `GET /rides/history` (alias: `/logs`)
 
-- `ADMIN_EMAIL`
-- `ADMIN_PASSWORD`
+## Admin
 
-Minimal `.env` (in `backend/.env` or exported in your shell):
+The UI only shows `/admin` if `localStorage.user.role === "admin"`.
+
+If your backend supports env-based admin bootstrapping, set:
 ```env
 ADMIN_EMAIL=admin@example.com
 ADMIN_PASSWORD=change-me
 ```
 
-Admin login example:
-```bash
-curl -s -X POST http://localhost:3000/v1/auth/admin/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"admin@example.com","password":"change-me"}'
-```
+## Common mix-ups
 
-If login succeeds, `user.role` should be `"admin"`.
+- `localhost:3000` is backend, not the React UI
+- Vite might run on `5173`, `5174`, etc. — use the printed URL

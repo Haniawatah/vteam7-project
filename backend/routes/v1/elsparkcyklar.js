@@ -1,45 +1,28 @@
 import express from 'express';
-import elsparkcyklar from '../../models/elsparkcykel.js';
-
-import { checkToken } from '../../middleware/utils.js';
+import { getDb } from '../../database.js';
+import { authenticate } from '../../middleware/utils.js';
 
 const router = express.Router();
 
-router.use(checkToken);
+// GET /v1/scooters
+router.get('/scooters', authenticate, async (_req, res) => {
+  try {
+    const db = await getDb();
+    if (!db) return res.json([]);
 
-
-// GET all charging stations
-router.get('/', async (req, res) => {
-    const data = await elsparkcyklar.getAll();
-    return res.json({ data });
-});
-
-// Create a new scooter
-router.post('/', async (req, res) => {
-    const data = await elsparkcyklar.addOne(req.body)
-    res.status(201).json({ data });
-});
-
-//Get a specific scooter
-router.get('/:id', async (req, res) => {
-    const id = req.params.id;
-    const data = await elsparkcyklar.getOne(id);
-
-    return res.json({ data });
-});
-
-
-// Update a scooter by ID
-router.put('/:id', async (req, res) => {
-    const data = await elsparkcyklar.update(req.body)
-    res.status(201).json({ data });
-});
-
-// Delete a scooter by ID
-router.delete('/:id', async (req, res) => {
-    const ok = await deleteScooter(db, req.params.id);
-    if (!ok) return res.status(404).json({ error: 'Not found' });
-    res.json({ ok: true });
+    const scooters = await db.collection('scooters').find({}).limit(2000).toArray();
+    return res.json(
+      scooters.map((s) => ({
+        id: String(s._id),
+        batteryLevel: Number(s.batteryLevel ?? s.battery ?? 0),
+        status: s.status ?? 'Off',
+        location: s.location ?? s.position ?? { lat: 0, lng: 0 },
+        city: s.city ?? s.stad ?? '',
+      }))
+    );
+  } catch {
+    return res.json([]);
+  }
 });
 
 export default router;

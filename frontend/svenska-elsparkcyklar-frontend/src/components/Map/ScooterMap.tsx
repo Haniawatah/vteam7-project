@@ -1,90 +1,80 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import { fetchScooters } from '../../services/scooters';
-import { Scooter } from '../../types';
-import L from 'leaflet';
+import { useScooters } from '../../hooks/useScooters';
 
 type Props = {
     setScooterId?: (id: string) => void;
-    height?: number | string; // UX: allow parent to control map height
+    height?: number | string;
 };
 
-// Custom marker icon
-const defaultIcon = new L.Icon({
-    iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
-    iconSize: [25, 41], // Adjust the size of the marker
-    iconAnchor: [12, 41], // Anchor the icon to the bottom
-    popupAnchor: [1, -34], // Position of the popup
-    shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
-    shadowSize: [41, 41],
-});
+const DEFAULT_CENTER: [number, number] = [59.3293, 18.0686]; // Stockholm
 
 const ScooterMap: React.FC<Props> = ({ setScooterId, height = 420 }) => {
-    const [scooters, setScooters] = useState<Scooter[]>([]);
-    const [loading, setLoading] = useState<boolean>(true);
+    const { scooters, loading, error } = useScooters(5000);
+
+    // Keep map center steady while data refreshes.
+    const initialCenterRef = useRef<[number, number]>(DEFAULT_CENTER);
+    const hasLockedInitialCenter = useRef(false);
 
     useEffect(() => {
-        const loadScooters = async () => {
-            try {
-                const data = await fetchScooters();
-                console.log(data); // Log data to ensure it is being fetched
-                setScooters(data); // Store scooter data in the state
-            } catch (error) {
-                console.error('Error fetching scooter data:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
+        if (hasLockedInitialCenter.current) return;
+        const first = scooters[0];
+        if (!first) return;
 
-        loadScooters();
-    }, []); // Empty dependency array ensures this effect runs only once (on mount)
+        initialCenterRef.current = [first.location.lat, first.location.lng];
+        hasLockedInitialCenter.current = true;
+    }, [scooters]);
 
-    if (loading) return <div>Loading...</div>;
-
-    // Utility function to extract LatLng from scooter data
-    const getLatLng = (scooter: any): [number, number] => {
-        console.log(scooter.position); // Log position data for debugging
-        if (Array.isArray(scooter.position) && scooter.position.length === 2) {
-            return [scooter.position[0], scooter.position[1]];
-        }
-
-        // Default position (fallback if position is not available)
-        return [59.3293, 18.0686]; // Coordinates for Stockholm (fallback)
-    };
-
-    return (
-        <MapContainer
-            center={[59.3293, 18.0686]} // Default center (Stockholm)
-            zoom={13} // Zoom level
-            style={{ height, width: '100%' }}
-        >
-            <TileLayer
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            />
-            
-            {scooters.map((scooter: any) => (
+    // Hooks must run every render (no early returns before hooks).
+    const markers = useMemo(
+        () =>
+            scooters.map((s) => (
                 <Marker
-                    key={scooter._id} // Use _id for key to ensure unique marker
-                    position={getLatLng(scooter)} // Get correct lat, lng from the scooter
-                    icon={defaultIcon} // Set the custom icon here
-                    eventHandlers={{
-                        click: () => {
-                            console.log(scooter._id); // Logs "Hello" when a marker is clicked
-                            setScooterId?.(scooter._id); // Also sets the scooterId
-                        },
-                    }}
+                    // Update marker key when it moves
+                    key={`${s.id}:${s.location.lat}:${s.location.lng}`}
+                    position={[s.location.lat, s.location.lng]}
+                    eventHandlers={{ click: () => setScooterId?.(s.id) }}
                 >
                     <Popup>
-                        <strong>Scooter ID:</strong> {scooter.name}
+                        <strong>ID:</strong> {s.id}
                         <br />
-                        <strong>Status:</strong> {scooter.status}
+                        <strong>Status:</strong> {s.status}
                         <br />
-                        <strong>Battery:</strong> {scooter.battery}%
+                        <strong>Battery:</strong> {Math.round(s.batteryLevel)}%
+                        <br />
+                        <strong>City:</strong> {s.city || '—'}
                     </Popup>
                 </Marker>
-            ))}
-        </MapContainer>
+            )),
+        [scooters, setScooterId]
+    );
+
+    return (
+        <div style={{ position: 'relative', height, width: '100%' }}>
+            {loading ? (
+                <div style={{ position: 'absolute', top: 8, right: 8, zIndex: 1000 }}>
+                    <small style={{ background: '#fff', border: '1px solid #eee', padding: '4px 8px', borderRadius: 8 }}>
+                        Loading…
+                    </small>
+                </div>
+            ) : null}
+
+            {error ? (
+                <div style={{ position: 'absolute', top: 8, left: 8, zIndex: 1000 }}>
+                    <small style={{ background: '#fee2e2', border: '1px solid #fecaca', padding: '4px 8px', borderRadius: 8 }}>
+                        Map error: {error}
+                    </small>
+                </div>
+            ) : null}
+
+            <MapContainer center={initialCenterRef.current} zoom={13} style={{ height: '100%', width: '100%' }}>
+                <TileLayer
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                />
+                {markers}
+            </MapContainer>
+        </div>
     );
 };
 

@@ -10,8 +10,8 @@ const Users = () => {
     useEffect(() => {
         const fetchUsers = async () => {
             try {
-                const response = await getUsers();
-                setUsers(response.data as User[]);
+                const list = await getUsers();
+                setUsers(list);
             } catch (error) {
                 console.error('Error fetching users:', error);
             } finally {
@@ -22,9 +22,7 @@ const Users = () => {
         fetchUsers();
     }, []);
 
-    if (loading) {
-        return <Loading />;
-    }
+    if (loading) return <Loading />;
 
     return (
         <div>

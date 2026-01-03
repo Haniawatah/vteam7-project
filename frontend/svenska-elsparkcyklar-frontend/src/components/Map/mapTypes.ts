@@ -11,3 +11,6 @@ export interface MapMarker {
     position: Coordinates;
     title?: string;
 }
+
+// Single source of truth:
+export type { Scooter, ScooterStatus } from '../../types';

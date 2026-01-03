@@ -3,10 +3,28 @@ import elsparkcyklar from '../../models/elsparkcykel.js';
 import rideLog from '../../models/ride.js';
 
 import { checkToken } from '../../middleware/utils.js';
+import { getDb } from '../../database.js';
+import requireAdmin from '../../middleware/admin.js';
 
 const router = express.Router();
 
 router.use(checkToken);
+
+async function listRideHistory() {
+  const db = await getDb();
+  if (!db) return [];
+
+  const rides = await db.collection('rides').find({}).sort({ startTime: -1 }).limit(1000).toArray();
+  return rides.map((r) => ({
+    id: String(r._id ?? r.id ?? ''),
+    user: r.user ?? r.userId ?? r.email ?? '—',
+    scooterId: r.scooterId ?? r.scooter_id ?? '—',
+    startTime: r.startTime ?? r.start_time ?? r.createdAt ?? null,
+    endTime: r.endTime ?? r.end_time ?? r.endedAt ?? null,
+    price: Number(r.price ?? r.cost ?? 0),
+    status: r.status ?? '—',
+  }));
+}
 
 
 // GET all parking stations
@@ -89,6 +107,24 @@ router.post('/end/:scooterId', async (req, res) => {
         console.error("Error ending ride:", e);
         res.status(500).json({ error: "Error ending the ride" });
     }
+});
+
+// Ride history for admin
+router.get('/rides/history', requireAdmin, async (_req, res) => {
+  try {
+    return res.json(await listRideHistory());
+  } catch {
+    return res.json([]);
+  }
+});
+
+// Alias the frontend mentions as fallback
+router.get('/logs', requireAdmin, async (_req, res) => {
+  try {
+    return res.json(await listRideHistory());
+  } catch {
+    return res.json([]);
+  }
 });
 
 export default router;

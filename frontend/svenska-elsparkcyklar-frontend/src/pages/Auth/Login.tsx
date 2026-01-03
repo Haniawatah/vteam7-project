@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { login } from '../../services/auth';
+import { getStoredUser, login } from '../../services/auth';
 
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -15,10 +15,12 @@ const Login = () => {
         setError('');
 
         try {
-            const { user } = await login(email, password);
+            await login(email, password);
+
+            const user = getStoredUser();
             navigate(user?.role === 'admin' ? '/admin' : '/');
-        } catch {
-            setError('Invalid email or password');
+        } catch (e: any) {
+            setError(e?.message ?? 'Login failed');
         }
     };
 

@@ -1,10 +1,10 @@
-import database from '../database.js';
+import { getDb } from '../database.js';
 import { ObjectId } from 'mongodb';
 
 const rideLog = {
     // Fetch all ride logs
     getAll: async function getAll() {
-        let db = await database.getDb();
+        let db = await getDb();
         try {
             return await db.collections.log.find().toArray();
         } catch (e) {
@@ -17,7 +17,7 @@ const rideLog = {
 
     // Fetch a specific ride log by ID
     getOne: async function getOne(id) {
-        let db = await database.getDb();
+        let db = await getDb();
         try {
             return await db.collections.log.findOne({ _id: new ObjectId(id) });
         } catch (e) {
@@ -30,7 +30,7 @@ const rideLog = {
 
     // Add a new ride log
     addOne: async function addOne(body) {
-        let db = await database.getDb();
+        let db = await getDb();
         try {
             return await db.collections.log.insertOne({
                 user_id: body.user_id,
@@ -52,7 +52,7 @@ const rideLog = {
 
     // Update an existing log entry
     updateLog: async function updateLog(body) {
-        let db = await database.getDb();
+        let db = await getDb();
         try {
             console.log(body);
             console.log("--------------t-tt")
@@ -74,7 +74,7 @@ const rideLog = {
 
     // Fetch logs for a specific scooter (using scooter ID)
     getByScooterId: async function getByScooterId(scooterId) {
-        let db = await database.getDb();
+        let db = await getDb();
         try {
             return await db.collections.log.find({ scooterId }).toArray();
         } catch (e) {
@@ -86,7 +86,7 @@ const rideLog = {
     },
 
     getByUser: async function getByUser(user) {
-    let db = await database.getDb();
+    let db = await getDb();
     try {
         return await db.collections.log.find({ user_id: user }).toArray();
     } catch (e) {

@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || '/v1',
+    baseURL: (import.meta.env.VITE_API_URL ?? '/v1').replace(/\/+$/, ''),
 });
 
 const getToken = () => localStorage.getItem('token') || '';
@@ -18,9 +18,9 @@ api.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
-// Response interceptor: callers receive already-unwrapped data
+// Revert: keep standard axios response shape (callers use response.data)
 api.interceptors.response.use(
-    (response) => response.data,
+    (response) => response,
     (error) => {
         const status = error?.response?.status;
         if (status === 401) {
@@ -35,10 +35,10 @@ api.interceptors.response.use(
     }
 );
 
-export const fetchReports = async () => api.get('/reports');
+export const fetchReports = async () => (await api.get('/reports')).data;
 
-export const getUserPaymentInfo = async () => api.get('/users/me/payment');
+export const getUserPaymentInfo = async () => (await api.get('/users/me/payment')).data;
 export const updatePaymentInfo = async (paymentInfo: unknown) =>
-    api.put('/users/me/payment', paymentInfo);
+    (await api.put('/users/me/payment', paymentInfo)).data;
 
 export default api;

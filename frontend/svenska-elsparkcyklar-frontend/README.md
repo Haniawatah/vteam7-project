@@ -2,6 +2,20 @@
 
 Project for “Svenska Elsparkcyklar AB”.
 
+## What’s in the UI
+
+### Admin dashboard (`/admin`)
+- **Scooters**: list with id/city/status/battery/coords (refresh + local “change status” simulation).
+- **Users**: list users + role editor + delete (requires backend endpoints).
+- **Stations**: list charging/parking stations (falls back to cities if needed).
+- **Logs**: ride history/log rows (history endpoint with a logs fallback).
+
+### Profile (`/profile`)
+- Account info (name/email/id/role)
+- Wallet/balance
+- Ride summary + recent rides
+- Quick links to payment/settings/history
+
 ## Prerequisites
 - Node.js + npm installed
 - Recommended: run from **VS Code** with **two terminals**
@@ -84,70 +98,34 @@ and open:
 
 # Svenska Elsparkcyklar AB (Frontend)
 
-React + Vite frontend for “Svenska Elsparkcyklar AB”.
+React + Vite.
 
-## Prerequisites
-- Node.js + npm
-- Backend running on `http://localhost:3000`
+## Run
 
----
-
-## Start the frontend (dev)
-From this folder:
-
-```bash
-npm install
-npm run dev
-```
-
-Open the **exact URL Vite prints** (example: `http://localhost:5174/`).
-
-> Note: Vite may use `5173`, `5174`, etc. depending on what is free.
-
----
-
-## Start backend + frontend together (two terminals)
-
-### Terminal A (backend)
+### Backend
 ```bash
 cd backend
 npm install
 npm start
 ```
-Backend health:
-- `http://localhost:3000/v1/health`
+Health: http://localhost:3000/v1/health
 
-### Terminal B (frontend)
+### Frontend
 ```bash
 cd frontend/svenska-elsparkcyklar-frontend
 npm install
 npm run dev
 ```
-Frontend:
-- open the printed Vite URL (example `http://localhost:5174/`)
+Open the exact Vite URL it prints.
 
----
+## Check integration
 
-## Verify integration (frontend talking to backend)
-Open (use your frontend port):
-- `http://localhost:5174/v1/health`
+Open (use your Vite port):
+- http://localhost:5174/v1/health
 
-Expected:
-- `{"ok":true}`
+## WSL
 
----
-
-## Troubleshooting
-
-### `HTTP ERROR 404` on the frontend URL
-Usually means:
-- you opened the wrong port, or
-- you started Vite in the wrong directory, or
-- `index.html` is missing from the frontend root.
-
-### Running in WSL
-If Windows can’t open the Vite URL, start with:
+If the Windows browser can’t open Vite:
 ```bash
 npm run dev -- --host 0.0.0.0
 ```
-Then open the **Network** URL Vite prints.

@@ -1,22 +1,10 @@
-export interface Scooter {
-    id: string;
-    model: string;
-    // support both shapes (some components expect flat coords)
-    latitude?: number;
-    longitude?: number;
-    location?: {
-        latitude: number;
-        longitude: number;
-    };
-    status: 'available' | 'rented' | 'maintenance';
-}
-
 export interface User {
     id: string;
     name: string;
     email: string;
     balance: number;
     rides: Ride[];
+    role?: 'admin' | 'user'; // <-- used by Navbar/ProtectedRoute/JWT payload
 }
 
 export interface Ride {
@@ -46,3 +34,5 @@ export interface Report {
     rideDuration: number;
     date: string | Date;
 }
+
+export * from './scooter';

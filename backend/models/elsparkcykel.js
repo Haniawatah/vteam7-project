@@ -168,3 +168,55 @@ const elsparkcyklar = {
 };
 
 export default elsparkcyklar;
+
+import { getDb } from '../database.js';
+
+export async function scootersCol() {
+  const db = await getDb();
+  return db.collection('scooters');
+}
+
+export async function listScooters() {
+  const col = await scootersCol();
+  return col.find({}).toArray();
+}
+
+export async function seedScootersIfEmpty() {
+  const col = await scootersCol();
+  const count = await col.countDocuments();
+  if (count > 0) return { ok: true, seeded: 0 };
+
+  const now = new Date();
+  const seed = [
+    {
+      name: 'SCOOTER-001',
+      battery: 82,
+      status: 'Available',
+      city: 'Stockholm',
+      position: [59.3293, 18.0686],
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      name: 'SCOOTER-002',
+      battery: 41,
+      status: 'InUse',
+      city: 'Stockholm',
+      position: [59.334, 18.06],
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      name: 'SCOOTER-003',
+      battery: 15,
+      status: 'Maintenance',
+      city: 'Stockholm',
+      position: [59.325, 18.075],
+      createdAt: now,
+      updatedAt: now,
+    },
+  ];
+
+  const res = await col.insertMany(seed);
+  return { ok: true, seeded: res.insertedCount };
+}

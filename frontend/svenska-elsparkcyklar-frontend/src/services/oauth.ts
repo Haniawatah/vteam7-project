@@ -1,38 +1,42 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+function decodeJwtPayload(token: string): any {
+  try {
+    const [, payload] = token.split('.');
+    if (!payload) return null;
+
+    const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '=');
+    return JSON.parse(atob(padded));
+  } catch {
+    return null;
+  }
+}
+
 const OAuthSuccess = () => {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
 
-    useEffect(() => {
-        // Get the token from the query string
-        const queryParams = new URLSearchParams(window.location.search);
-        const token = queryParams.get('token');
+  useEffect(() => {
+    const queryParams = new URLSearchParams(window.location.search);
+    const token = queryParams.get('token');
 
-        console.log(token)
+    if (!token) {
+      navigate('/auth/login', { replace: true });
+      return;
+    }
 
-        if (token) {
-            // Store the token in localStorage
-            localStorage.setItem('token', token);
-            
-            // Decode the token and store the role
-            const decodedToken = JSON.parse(atob(token.split('.')[1])); // Decode JWT
-            console.log(decodedToken)
-            localStorage.setItem('user', decodedToken.roll);
+    localStorage.setItem('token', token);
 
-            // Här flyttas man efter inloggningen, admin är första just nu profile måste ändras
-            if (decodedToken.roll === 'admin') {
-                navigate('/profile');
-            } else {
-                navigate('/');
-            }
+    const decoded = decodeJwtPayload(token) ?? {};
+    const role = decoded.role ?? decoded.roll ?? 'user';
 
-            // Reload the page to trigger navbar state refresh
-        } else {
-            // Handle case if no token is found
-            console.error('No token found');
-        }
-    }, [navigate]);
+    localStorage.setItem('user', JSON.stringify({ ...decoded, role }));
+
+    navigate(role === 'admin' ? '/admin' : '/', { replace: true });
+  }, [navigate]);
+
+  return null;
 };
 
 export default OAuthSuccess;

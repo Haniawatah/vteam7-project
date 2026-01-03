@@ -18,7 +18,7 @@ import Register from '../pages/Auth/Register';
 import NotFound from '../pages/NotFound';
 import ProtectedRoute from '../components/ProtectedRoute';
 
-import OAuthSuccess from '../services/oauth.js'
+import OAuthSuccess from '../services/oauth';
 
 const AppRoutes = () => {
     return (
@@ -33,11 +33,11 @@ const AppRoutes = () => {
                 <Route path="profile/payment" element={<ProtectedRoute><Payment /></ProtectedRoute>} />
                 <Route path="profile/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
 
+                <Route path="oauth-success" element={<OAuthSuccess />} />
+
                 <Route path="auth/login" element={<Login />} />
                 <Route path="auth/register" element={<Register />} />
                 <Route path="*" element={<NotFound />} />
-
-                <Route path="/oauth-success" element={<OAuthSuccess />} />
             </Route>
 
             <Route

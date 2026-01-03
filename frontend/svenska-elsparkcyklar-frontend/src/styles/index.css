@@ -160,3 +160,153 @@ tbody td {
 tbody tr:hover {
   background: #f9fafb;
 }
+
+.leaflet-container {
+  height: 100%;
+  width: 100%;
+}
+
+/* Admin dashboard layout */
+.admin-dashboard {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  gap: 16px;
+  padding: 16px;
+}
+
+.admin-dashboard__aside {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 12px;
+  position: sticky;
+  top: 12px;
+  height: fit-content;
+}
+
+.admin-dashboard__main {
+  min-width: 0;
+}
+
+/* Stack sidebar + content on smaller screens */
+@media (max-width: 900px) {
+  .admin-dashboard {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-dashboard__aside {
+    position: static;
+    top: auto;
+  }
+}
+
+.profile-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.profile-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.profile-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.profile-card {
+  grid-column: span 6;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+
+.profile-card h2 {
+  margin: 0 0 10px;
+}
+
+.profile-dl {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.profile-dl > div {
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr);
+  gap: 10px;
+  align-items: baseline;
+}
+
+.profile-dl dt {
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.profile-dl dd {
+  margin: 0;
+}
+
+.profile-list {
+  display: grid;
+  gap: 10px;
+}
+
+.profile-list__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.profile-list__meta {
+  flex: 0 0 auto;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: #f9fafb;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.badge--admin {
+  border-color: rgba(37, 99, 235, 0.35);
+  background: rgba(37, 99, 235, 0.08);
+  color: #1d4ed8;
+}
+
+@media (max-width: 900px) {
+  .profile-card {
+    grid-column: span 12;
+  }
+
+  .profile-dl > div {
+    grid-template-columns: 1fr;
+  }
+}

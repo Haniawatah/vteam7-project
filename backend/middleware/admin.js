@@ -10,3 +10,9 @@ export function checkAdmin(req, res, next) {
 
     next();
 }
+
+export default function requireAdmin(req, res, next) {
+  const role = req.user?.role ?? req.user?.roll; // tolerate legacy "roll"
+  if (role !== 'admin') return res.status(403).json({ error: 'Admin only' });
+  return next();
+}

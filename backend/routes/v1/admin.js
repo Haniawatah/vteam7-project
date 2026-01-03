@@ -38,8 +38,25 @@ router.get('/bike/:id', checkToken, checkAdmin, async (req, res) => {
     return res.json({ data });
 });
 
+router.get('/admin/users', checkToken, checkAdmin, async (_req, res) => {
+    try {
+        const db = await getDb();
+        if (!db) return res.json([]);
 
-
+        const users = await db.collection('users').find({}).limit(500).toArray();
+        return res.json(
+            users.map((u) => ({
+                id: String(u._id ?? u.id ?? ''),
+                email: u.email ?? '',
+                role: u.role ?? u.roll ?? 'user',
+                balance: Number(u.balance ?? u.wallet ?? 0),
+                name: u.name ?? u.username ?? '',
+            }))
+        );
+    } catch {
+        return res.json([]);
+    }
+});
 
 
 export default router;

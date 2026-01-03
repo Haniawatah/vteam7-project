@@ -1,21 +1,30 @@
 import jwt from 'jsonwebtoken';
 
-export function checkToken(req, res, next) {
-    const token = req.headers['x-access-token'];
-
-    if (!token) {
-        return res.status(401).json({ success: false, message: "No token provided" });
-    }
-
-    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-        if (err) {
-            return res.status(401).json({ success: false, message: "Invalid token" });
-        }
-
-        req.user = decoded;
-        next();
-    });
+function getToken(req) {
+  const auth = req.headers?.authorization;
+  if (typeof auth === 'string' && auth.toLowerCase().startsWith('bearer ')) {
+    return auth.slice(7).trim();
+  }
+  const x = req.headers?.['x-access-token'];
+  if (typeof x === 'string' && x.trim()) return x.trim();
+  return null;
 }
+
+export function authenticate(req, res, next) {
+  const token = getToken(req);
+  if (!token) return res.status(401).json({ error: 'Missing token' });
+
+  try {
+    const secret = process.env.JWT_SECRET || 'change-me';
+    req.user = jwt.verify(token, secret);
+    return next();
+  } catch {
+    return res.status(401).json({ error: 'Invalid token' });
+  }
+}
+
+// Backwards-compat for existing routes importing { checkToken }
+export const checkToken = authenticate;
 
 export function checkAdmin(req, res, next) {
 
