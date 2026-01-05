@@ -5,7 +5,7 @@ import { authenticate } from '../../middleware/utils.js';
 const router = express.Router();
 
 // GET /v1/scooters
-router.get('/scooters', authenticate, async (_req, res) => {
+router.get('/', authenticate, async (_req, res) => {
   try {
     const db = await getDb();
     if (!db) return res.json([]);

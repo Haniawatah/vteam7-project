@@ -11,6 +11,7 @@ const RideHistory: React.FC = () => {
         const fetchRideHistory = async () => {
             try {
                 const data = await getRideHistory();
+                console.log(data, "taw")
                 setRides(data);
             } catch (err) {
                 setError('Failed to fetch ride history');
@@ -35,13 +36,16 @@ const RideHistory: React.FC = () => {
             <h1>Ride History</h1>
             <ul>
                 {rides.map((ride) => {
-                    const date = ride.date ? new Date(ride.date) : null;
-                    const duration = ride.duration ?? 0;
-                    const cost = ride.cost ?? 0;
+                    const startDate = ride.start_time ? new Date(ride.start_time) : null;
+                    const startTime = new Date(ride.start_time).getTime();
+                    const endTime = new Date(ride.end_time).getTime();
+                    const durationInMs = endTime - startTime;
+                    const duration = Math.ceil(durationInMs / 60000) ?? 0;
+                    const cost = ride.price ?? 0;
 
                     return (
                         <li key={ride.id}>
-                            <p>Date: {date ? date.toLocaleDateString() : '—'}</p>
+                            <p>Date: {startDate ? startDate.toLocaleDateString() : '—'}</p>
                             <p>Scooter ID: {ride.scooterId}</p>
                             <p>Duration: {duration} minutes</p>
                             <p>Cost: ${cost.toFixed(2)}</p>

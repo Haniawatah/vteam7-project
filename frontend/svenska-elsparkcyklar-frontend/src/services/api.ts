@@ -37,8 +37,4 @@ api.interceptors.response.use(
 
 export const fetchReports = async () => (await api.get('/reports')).data;
 
-export const getUserPaymentInfo = async () => (await api.get('/users/me/payment')).data;
-export const updatePaymentInfo = async (paymentInfo: unknown) =>
-    (await api.put('/users/me/payment', paymentInfo)).data;
-
 export default api;

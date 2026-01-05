@@ -49,8 +49,6 @@ const städer = {
     update: async function update(body) {
         let db = await database.getDb();
 
-        console.log(body.content);
-
         try {
             return await db.collections.städer.updateOne({_id: new ObjectId(body.id)},
             { $set: { 

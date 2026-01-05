@@ -1,83 +1,67 @@
-//import openDb from './db/database.mjs';
-
-import database from '../database.js'
+import { getDb } from '../database.js';
 import { ObjectId } from 'mongodb';
 
-const invoices = {
-    getAll: async function getAll() {
-        let db = await database.getDb();
+export async function invoicesCol() {
+    const db = await getDb();
+    return db.collection('invoices');
+}
 
-        try {
-            return await db.collections.elsparkcyklar.find().toArray();
-        } catch (e) {
-            console.error(e);
+// Get all invoices
+export async function getAllInvoices() {
+    const col = await invoicesCol();
+    return col.find({}).toArray();
+}
 
-            return [];
-        } finally {
-            await db.client.close();
-        }
-    },
-
-    getOne: async function getOne(id) {
-        let db = await database.getDb();
-        try {
-            return await db.collections.elsparkcyklar.findOne({_id: new ObjectId(id)});
-        } catch (e) {
-            console.error(e);
-
-            return {};
-        } finally {
-            await db.client.close();
-        }
-    },
-
-    addOne: async function addOne(body) {
-        let db = await database.getDb();
-
-        try {
-            return await db.collections.elsparkcyklar.insertOne({
-                title: body.title,
-                content: body.content,
-                allowed_users: body.allowed_users || []
-            });
-        } catch (e) {
-            console.error(e);
-        } finally {
-            db.client.close();
-        }
-    },
-
-    update: async function update(body) {
-        let db = await database.getDb();
-
-        console.log(body.content);
-
-        try {
-            return await db.collections.elsparkcyklar.updateOne({_id: new ObjectId(body.id)},
-            { $set: { 
-                title: body.title, 
-                content: body.content,
-                allowed_users: body.allowed_users
-            } });
-        } catch (e) {
-            console.error(e);
-        } finally {
-            await db.client.close();
-        }
-    },
-
-    getByUser: async function getByUser(email) {
-    let db = await database.getDb();
+// Get invoice by ID
+export async function getInvoice(id) {
+    const col = await invoicesCol();
     try {
-        return await db.collections.elsparkcyklar.find({ allowed_users: email }).toArray();
+        return await col.findOne({ _id: new ObjectId(id) });
     } catch (e) {
         console.error(e);
-        return [];
-    } finally {
-        await db.client.close();
+        return null;
     }
 }
 
-};
+// Add a new invoice
+export async function addInvoice({ user_id, money, date = new Date(), payment_method, status }) {
+    const col = await invoicesCol();
+    const doc = {
+        user_id,
+        money,
+        date,
+        payment_method,
+        status
+    };
+    const res = await col.insertOne(doc);
+    return { ...doc, _id: res.insertedId };
+}
 
-export default invoices;
+// Update an invoice (if needed)
+export async function updateInvoice({ id, money, date, payment_method, status }) {
+    const col = await invoicesCol();
+    const updateObj = {
+        $set: {
+        ...(money !== undefined && { money }),
+        ...(date && { date }),
+        ...(payment_method && { payment_method }),
+        ...(status && { status }),
+        },
+    };
+    await col.updateOne({ _id: new ObjectId(id) }, updateObj);
+    return { success: true };
+}
+
+// Get invoices for a specific user
+export async function getInvoicesByUser(user_id) {
+    const col = await invoicesCol();
+    return col.find({ user_id }).toArray();
+}
+
+export default {
+    getAll: getAllInvoices,
+    getOne: getInvoice,
+    addOne: addInvoice,
+    update: updateInvoice,
+    getByUser: getInvoicesByUser,
+};

@@ -18,6 +18,9 @@ import Register from '../pages/Auth/Register';
 import NotFound from '../pages/NotFound';
 import ProtectedRoute from '../components/ProtectedRoute';
 
+import Payments from '../pages/Profile/Payments';
+import MonthlySubscription from '../pages/Profile/MonthlyPayment';
+
 import OAuthSuccess from '../services/oauth';
 
 const AppRoutes = () => {
@@ -31,6 +34,8 @@ const AppRoutes = () => {
 
                 <Route path="profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                 <Route path="profile/payment" element={<ProtectedRoute><Payment /></ProtectedRoute>} />
+                <Route path="profile/payments" element={<ProtectedRoute><Payments /></ProtectedRoute>} />
+                <Route path="profile/monthly" element={<ProtectedRoute><MonthlySubscription /></ProtectedRoute>} />
                 <Route path="profile/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
 
                 <Route path="oauth-success" element={<OAuthSuccess />} />

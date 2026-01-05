@@ -1,0 +1,106 @@
+<div className="profile-container">
+      <header className="profile-header">
+        <div>
+          <h1 style={{ margin: 0 }}>Profil</h1>
+          <div style={{ color: 'var(--muted)', marginTop: 4 }}>
+            Inloggad som <strong>{normalized.email}</strong>
+          </div>
+        </div>
+
+        <div className="profile-actions">
+          <Link className="button secondary" to="/profile/payment">Betalning</Link>
+          <Link className="button secondary" to="/profile/settings">Inställningar</Link>
+          <Link className="button" to="/rent/history">Hyreshistorik</Link>
+        </div>
+      </header>
+
+      <section className="profile-grid">
+        <div className="profile-card">
+          <h2>Account</h2>
+          <dl className="profile-dl">
+            <div>
+              <dt>Namn</dt>
+              <dd>{normalized.name}</dd>
+            </div>
+            <div>
+              <dt>E-post</dt>
+              <dd>{normalized.email}</dd>
+            </div>
+            <div>
+              <dt>Användar-ID</dt>
+              <dd style={{ fontFamily: 'monospace' }}>{normalized.id}</dd>
+            </div>
+            <div>
+              <dt>Roll</dt>
+              <dd>
+                <span className={normalized.role === 'admin' ? 'badge badge--admin' : 'badge'}>
+                  {normalized.role}
+                </span>
+              </dd>
+            </div>
+          </dl>
+        </div>
+
+        <div className="profile-card">
+          <h2>Plånbok</h2>
+          <div style={{ fontSize: 28, fontWeight: 800, marginTop: 6 }}>
+            {fmtMoneySek(normalized.balance)}
+          </div>
+          <div style={{ color: 'var(--muted)', marginTop: 6 }}>
+            Din nuvarande balans som används för åkningar och avgifter.
+          </div>
+
+          <div style={{ marginTop: 12, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <Link className="button" to="/profile/payment">Uppdatera betalningsmetod</Link>
+            <Link className="button secondary" to="/profile/monthly">Subscribe</Link>
+            <Link className="button secondary" to="/profile/payments">Add money</Link>
+            <Link className="button secondary" to="/rent">Hyr en scooter</Link>
+          </div>
+        </div>
+
+        <div className="profile-card">
+          <h2>Åkningar (sammanfattning)</h2>
+          <dl className="profile-dl">
+            <div>
+              <dt>Totalt</dt>
+              <dd>{stats.total}</dd>
+            </div>
+            <div>
+              <dt>Aktiva</dt>
+              <dd>{stats.active}</dd>
+            </div>
+            <div>
+              <dt>Avslutade</dt>
+              <dd>{stats.ended}</dd>
+            </div>
+          </dl>
+
+          {recent.length > 0 ? (
+            <>
+              <h3 style={{ marginTop: 16, marginBottom: 8 }}>Senaste åkningarna</h3>
+              <div className="profile-list">
+                {recent.map((r) => (
+                  <div key={r.id} className="profile-list__row">
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontWeight: 700 }}>
+                        Scooter <span style={{ fontFamily: 'monospace' }}>{r.scooterId}</span>
+                      </div>
+                      <div style={{ color: 'var(--muted)', fontSize: 12 }}>
+                        Start: {fmtDate(r.startTime ?? r.date)} · Slut: {fmtDate(r.endTime)}
+                      </div>
+                    </div>
+                    <div className="profile-list__meta">
+                      <span className="badge">{r.status ?? '—'}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div style={{ marginTop: 12, color: 'var(--muted)' }}>
+              Inga åkningar ännu. <Link to="/rent">Hyra en scooter</Link> för att komma igång.
+            </div>
+          )}
+        </div>
+      </section>
+    </div>

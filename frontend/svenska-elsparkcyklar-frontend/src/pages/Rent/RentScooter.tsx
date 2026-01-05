@@ -13,7 +13,8 @@ const RentScooter = () => {
         setIsRenting(true);
         try {
             const ride = await rentScooter(scooterId);
-            navigate(`/rent/active/${ride.id}`);
+            console.log(ride, "ridens")
+            navigate(`/rent/active/${ride._id}`);
         } catch (error) {
             alert('Failed to rent scooter. Please try again.');
         } finally {

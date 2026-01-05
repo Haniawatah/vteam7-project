@@ -1,8 +1,14 @@
 import express from 'express';
 import user from '../../models/user.js';
+import invoices from '../../models/invoices.js';
+import subscriptionLog from '../../models/subscriptionlog.js';
+
 import { ObjectId } from 'mongodb';
 
+import { toPublicUser, getWallet } from "../../models/user.js";
+
 import { checkToken } from '../../middleware/utils.js';
+import { signToken } from '../../middleware/signtoken.js';
 import { getDb } from '../../database.js';
 import requireAdmin from '../../middleware/admin.js';
 
@@ -28,7 +34,8 @@ router.post("/register", async (req, res) => {
 router.get('/profile', async (req, res) => {
     const userEmail = req.user.email;
 
-    console.log(req)
+    console.log(req.user, "users")
+
     const data = await user.getOne(userEmail);
     
     if (!data) {
@@ -40,12 +47,174 @@ router.get('/profile', async (req, res) => {
 
 });
 
-router.get('/:email', async (req, res) => {
-    const email = req.params.email;
-    const doc = await user.getOne(email);
 
-    return res.json({ doc });
+router.get('/payment', async (req, res) => {
+    const userId = req.user.sub;
+
+    const data = await user.getPaymentInfo(userId);
+    
+    if (!data) {
+        return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    res.status(200).json({ data });
+
 });
+
+router.put('/payment', async (req, res) => {
+  console.log("payment route hit");
+  try {
+    const userId = req.user.sub;
+    if (!userId) return res.status(401).json({ success: false, error: 'Invalid token' });
+
+    const { cardNumber, expiryDate } = req.body;
+    if (!cardNumber || !expiryDate) {
+      return res.status(400).json({ success: false, error: 'Card number and expiry date required' });
+    }
+
+    //Kort sakerna vi sparar inte cvv
+    const card = {
+      number: cardNumber,
+      exp_date: expiryDate,
+    };
+
+    const response = await user.savePaymentMethod(userId, card);
+
+    return res.status(200).json(response);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ success: false, error: 'Failed to save payment method' });
+  }
+});
+
+
+
+router.put('/wallet/add', async (req, res) => {
+    const userEmail = req.user.email;
+    const userId = req.user.sub;
+    const amount = Number(req.body.amount);
+
+    if (!amount || amount <= 0) {
+        return res.status(400).json({ message: 'Invalid amount' });
+    }
+
+    try {
+        await user.addMoney(userId, amount);
+
+        await invoices.addOne({
+            user_id: userId,
+            money: amount,
+            date: new Date(),
+            payment_method: 'fake_card',
+            status: 'completed'
+        });
+
+        const updatedUser = await user.getOne(userEmail);
+
+        res.status(200).json({ user: toPublicUser(updatedUser) });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ message: 'Failed to add money' });
+    }
+});
+
+
+router.get('/wallet', async (req, res) => {
+
+    const wallet = await getWallet(req.user.sub);
+
+    console.log(wallet)
+    res.status(200).json({ success: true, wallet });
+
+});
+
+
+
+
+router.get('/subscription', async (req, res) => {
+    console.log(req.user, "route:ska")
+    try {
+        const subscription = await user.getSubscription(req.user.sub);
+
+        console.log(subscription)
+        res.status(200).json({ success: true, subscription });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ success: false, message: 'Failed to fetch subscription info' });
+    }
+});
+
+
+
+router.post('/subscription/start', async (req, res) => {
+    const userId = req.user.sub;
+
+    const payment = await user.getPaymentInfo(userId);
+
+    const currentDate = new Date();
+    const nextBillingDate = new Date();
+    nextBillingDate.setMonth(currentDate.getMonth() + 1);
+
+    const subscriptionData = {
+        payment_card: payment.card_id,
+        status: 'active',
+        monthlyFee: 1000,
+        lastBilled: currentDate,
+        nextBillingDate: nextBillingDate,
+    };
+
+    const logData = {
+        user_id: userId,
+        card_id: payment.card_id,
+        amount: 1000,
+        date: currentDate,
+        type: "subscribe"
+    };
+
+    await subscriptionLog.addOne(logData)
+
+    const updated = await user.updateSubscription(userId, subscriptionData);
+
+    console.log(updated, "updater")
+    res.status(200).json({ success: true, subscription: updated });
+
+});
+
+
+
+router.put('/subscription/cancel', async (req, res) => {
+    const userId = req.user.sub;
+
+    const currentSubscription = await user.getSubscription(userId);
+
+    const payment = await user.getPaymentInfo(userId);
+
+    const currentDate = new Date();
+
+    const subscriptionData = {
+        status: 'stopping',
+        monthlyFee: 1000,
+        lastBilled: currentSubscription.lastBilled,
+        nextBillingDate: currentSubscription.nextBillingDate
+    };
+
+    const logData = {
+        user_id: userId,
+        card_id: payment.card_id,
+        amount: 1000,
+        date: currentDate,
+        type: "cancel"
+    };
+
+    await subscriptionLog.addOne(logData)
+
+    const updated = await user.updateSubscription(userId, subscriptionData);
+    res.status(200).json({ success: true, subscription: updated });
+
+
+});
+
+
 
 // GET /v1/users
 router.get('/users', requireAdmin, async (_req, res) => {
@@ -101,6 +270,15 @@ router.delete('/users/:id', requireAdmin, async (req, res) => {
   } catch {
     return res.status(500).json({ error: 'Failed to delete user' });
   }
+});
+
+
+
+router.get('/:email', async (req, res) => {
+    const email = req.params.email;
+    const doc = await user.getOne(email);
+
+    return res.json({ doc });
 });
 
 export default router;

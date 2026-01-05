@@ -1,5 +1,5 @@
 import express from 'express';
-import elsparkcyklar from '../../models/elsparkcykel.js';
+import * as elsparkcyklar from '../../models/elsparkcykel.js';
 import user from '../../models/user.js';
 
 import { checkToken } from '../../middleware/utils.js';
@@ -24,6 +24,7 @@ router.get('/users', checkToken, checkAdmin, async (req, res) => {
 });
 
 router.get('/user/:email', checkToken, checkAdmin, async (req, res) => {
+    console.log("hejsan")
     const email = req.params.email;
     const data = await user.getOne(email);
 

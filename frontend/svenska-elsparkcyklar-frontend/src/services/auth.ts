@@ -32,6 +32,7 @@ const storeAuth = (data: AuthResponse) => {
     localStorage.setItem('token', data.token);
 
     const decoded = decodeJwtPayload(data.token) ?? {};
+    console.log(decoded, "decode-----------------------------------------------")
     const role = data.user?.role ?? decoded.role ?? decoded.roll; // prefer backend user.role
 
     // Store a real user object (JSON), not just JWT payload.

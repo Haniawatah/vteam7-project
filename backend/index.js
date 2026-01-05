@@ -1,11 +1,26 @@
+import 'dotenv/config';
+import express from 'express';
+import v1Routes from './routes/app.js';
+import cors from 'cors';
 import dotenv from 'dotenv';
+
 dotenv.config();
 
-import app from './routes/app.js';
+const server = express();
+const port = process.env.PORT || 3000;
 
-const PORT = Number(process.env.PORT ?? 3000);
+server.use(cors({
+    origin: 'http://localhost:5173',
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'x-access-token'],
+}));
 
-app.listen(PORT, () => {
-  // eslint-disable-next-line no-console
-  console.log(`Backend listening on http://localhost:${PORT}`);
-});
+server.use(express.json());
+
+
+server.use('/v1', v1Routes);
+
+
+const app = server.listen(port, () => console.log(`Example app listening on port ${port}!`));
+
+export default app;

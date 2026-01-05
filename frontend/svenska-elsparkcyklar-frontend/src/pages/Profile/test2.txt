@@ -55,10 +55,14 @@ const Profile: React.FC = () => {
         </div>
       </div>
 
+      <div className="profile-actions">
+        <button className="button secondary" onClick={handleyPayment}>Betalning</button>
+        <button className="button secondary" onClick={monthly}>Subscribe</button>
+        <button className="button" onClick={moneyAdd}>Add money</button>
+      </div>
     </header>
 
     <section className="profile-grid">
-      {/* Account info */}
       <div className="profile-card">
         <h2>Account</h2>
         <dl className="profile-dl">
@@ -74,71 +78,38 @@ const Profile: React.FC = () => {
             <dt>Användar-ID</dt>
             <dd style={{ fontFamily: 'monospace' }}>{user.id ?? '—'}</dd>
           </div>
-          <div>
-            <dt>Roll</dt>
-            <dd style={{ fontFamily: 'monospace' }}>{user.role ?? '—'}</dd>
-          </div>
         </dl>
       </div>
 
       <div className="profile-card">
-
-          <h2>Prenumeration</h2>
-              <div className="card" style={{ marginBottom: 12 }}>
-                {user.subscription.status === 'inactive' || user.subscription.status === 'stopping' ? (
-                  <>
-                    <p>Expires: {user.subscription.nextBillingDate}</p>
-                  </>
-                ) : (
-                  <>
-                    <p>Status: {user.subscription.status}</p>
-                    <p>Next Billing: {user.subscription.nextBillingDate}</p>
-                  </>
-                )}
-              </div>
-
-
-
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <button className="button secondary" onClick={() => navigate('/rent')}>Hyr en scooter</button>
-          <button className="button secondary" onClick={monthly} disabled={!user.enabled}>Subscribe</button>
-        </div>
-      </div>
-
-
-      {/* Wallet / balance card */}
-      <div className="profile-card">
         <h2>Plånbok</h2>
         <div style={{ fontSize: 28, fontWeight: 800, marginTop: 6 }}>
-          <p>${user.wallet}</p>
+          {user.wallet}
         </div>
         <div style={{ color: 'var(--muted)', marginTop: 6 }}>
           Din nuvarande balans som används för åkningar och avgifter.
         </div>
 
-        <h2>Betalkort</h2>
+        <div style={{ marginTop: 12, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <button className="button" onClick={handleyPayment}>Uppdatera betalningsmetod</button>
+          <button className="button secondary" onClick={monthly}>Subscribe</button>
+          <button className="button secondary" onClick={moneyAdd}>Add money</button>
+        </div>
 
+        <h3 style={{ marginTop: 12 }}>Card information</h3>
         {user.last4 ? (
-          <div className="card" style={{ marginBottom: 12 }}>
+          <div className="card">
             <p>Card: {user.last4}</p>
             <p>Expires: {user.exp_date}</p>
             <p>Status: {user.enabled ? 'Enabled' : 'Disabled'}</p>
           </div>
         ) : (
-          <div className="card" style={{ marginBottom: 12 }}>
-            <p>Ingen kortinformation</p>
+          <div className="card">
+            <p>No card information</p>
           </div>
         )}
-
-        <div style={{ marginTop: 12, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <button className="button" onClick={handleyPayment}>Change Card</button>
-          <button className="button secondary" onClick={moneyAdd}>Add money</button>
-        </div>
       </div>
 
-      {/* Card info / subscription card */}
-
-      {/* Ride summary */}
       <div className="profile-card">
         <h2>Åkningar (sammanfattning)</h2>
         {user.rides?.length > 0 ? (
@@ -168,7 +139,6 @@ const Profile: React.FC = () => {
     </section>
   </div>
 );
-
 
 };
 

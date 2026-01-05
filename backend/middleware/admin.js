@@ -5,7 +5,7 @@ export function checkAdmin(req, res, next) {
 
     if (userRole !== 'admin') {
 
-        return res.status(403).json({ success: false, message: "Access denied: Admins only" });
+        return res.status(403).json({ success: false, message: "Access denied2: Admins only" });
     }
 
     next();

@@ -80,19 +80,44 @@ export const deleteScooter = async (id: string) => {
     }
 };
 
+
 export const rentScooter = async (scooterId: string) => {
+    let token = localStorage.getItem("token");
+
     try {
-        const res = await api.post(
-            '/rides',
-            { scooterId },
-            {
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...tokenHeader(),
-                },
+        const response = await api.post(`/ride/start/${scooterId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'x-access-token': token,
             }
-        );
-        return res.data;
+        });
+
+        console.log(response.data, "-------------------------------------------")
+
+        return response.data;
+    } catch (error) {
+        throw new Error('Error renting scooter: ' + toMessage(error));
+    }
+};
+
+
+// Used by RentScooter page
+export const endScooter = async (scooterId: string) => {
+    let token = localStorage.getItem("token");  // Fetch the token
+
+    try {
+        const response = await api.post(`/ride/end/${scooterId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',  // Lägg till Accept om backend kräver det
+                'x-access-token': token,  // Använd x-access-token istället för Authorization
+            }
+        });
+
+        return response.data;
     } catch (error) {
         throw new Error('Error renting scooter: ' + toMessage(error));
     }

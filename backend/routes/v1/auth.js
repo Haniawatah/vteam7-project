@@ -12,6 +12,11 @@ function signToken(user) {
       email: user.email,
       role: user.role,
       name: user.name,
+      wallet: user.wallet,
+      last4: user.last4,
+      enabled: user.enabled,
+      exp_date: user.exp_date,
+      subscription: user.subscription
     },
     secret,
     { expiresIn: "7d" }
@@ -25,6 +30,7 @@ export async function registerHandler(req, res) {
       return res.status(400).json({ error: "email and password required" });
 
     const user = await createUser({ email, password, name, role: "user" });
+    console.log(user, "register user:---------------------------")
     const token = signToken(user);
     return res.json({ token, user: toPublicUser(user) });
   } catch {
