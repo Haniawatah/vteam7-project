@@ -20,7 +20,10 @@ function coerceNumber(value: unknown, fallback = 0): number {
 }
 
 function coerceLocation(raw: any): { lat: number; lng: number } {
-  // Accepts a few common location formats.
+  // Accepterar några vanliga format:
+  // - {lat,lng}
+  // - [lat,lng]
+  // - GeoJSON {coordinates:[lng,lat]}
   if (raw && typeof raw === 'object' && typeof raw.lat === 'number' && typeof raw.lng === 'number') {
     return { lat: raw.lat, lng: raw.lng };
   }
@@ -66,12 +69,20 @@ export function useScooters(pollMs = 5000) {
 
   const intervalRef = useRef<number | null>(null);
 
+  function hasValidLocation(s: Scooter) {
+    return (
+      Number.isFinite(s.location?.lat) &&
+      Number.isFinite(s.location?.lng) &&
+      !(s.location.lat === 0 && s.location.lng === 0)
+    );
+  }
+
   const load = async (showLoading: boolean) => {
     setState((s) => ({ ...s, loading: showLoading || s.scooters.length === 0, error: null }));
     try {
       const res = await api.get('/scooters');
       const list = extractList(res.data);
-      const normalized = list.map(normalizeScooter).filter((s) => s.id);
+      const normalized = list.map(normalizeScooter).filter((s) => s.id).filter(hasValidLocation);
       setState({ scooters: normalized, loading: false, error: null });
     } catch (e: any) {
       setState((s) => ({
@@ -83,6 +94,7 @@ export function useScooters(pollMs = 5000) {
   };
 
   useEffect(() => {
+    // Ladda direkt + starta polling
     void load(true);
 
     if (intervalRef.current) window.clearInterval(intervalRef.current);

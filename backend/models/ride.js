@@ -1,9 +1,9 @@
-import { getDb } from '../database.js';
+import * as database from '../database.js';
 import { ObjectId } from 'mongodb';
 
 // Use the logs collection
 async function logsCol() {
-    const db = await getDb();
+    const db = await database.getDb();
     return db.collection('log');
 }
 

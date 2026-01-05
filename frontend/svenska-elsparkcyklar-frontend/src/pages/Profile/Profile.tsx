@@ -1,12 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { fetchProfile, addMoney, getUserPaymentInfo } from '../../services/user';
+import { fetchProfile } from '../../services/user';
 import { useNavigate } from 'react-router-dom';
-
-type PaymentInfo = {
-    cardNumber: string;
-    exp_date: string;
-    cvv?: string;
-};
 
 const Profile: React.FC = () => {
     const [user, setUser] = useState<any>(null);
@@ -15,19 +9,19 @@ const Profile: React.FC = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        const fetchRideHistory = async () => {
+        const load = async () => {
             try {
                 const data = await fetchProfile();
-                console.log(data, "te2st")
                 setUser(data);
-            } catch (err) {
-                setError('Failed to fetch ride history');
+                setError(null);
+            } catch (e: any) {
+                setError(e?.message ?? 'Failed to fetch profile');
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchRideHistory();
+        void load();
     }, []);
 
     const handleyPayment = () => {
@@ -43,8 +37,20 @@ const Profile: React.FC = () => {
     };
 
     if (loading) return <p>Loading...</p>;
-    if (error) return <p>{error}</p>;
-    if (!user) return null;
+    if (error) return <p className="error">{error}</p>;
+
+    if (!user) {
+        return (
+            <div className="profile-container">
+                <div className="error">
+                    Profile data is missing. Try logging out and logging in again.
+                </div>
+            </div>
+        );
+    }
+
+    const sub = user.subscription ?? { status: 'inactive', nextBillingDate: null, monthlyFee: 0 };
+
     return (
   <div className="profile-container">
     <header className="profile-header">
@@ -85,14 +91,12 @@ const Profile: React.FC = () => {
 
           <h2>Prenumeration</h2>
               <div className="card" style={{ marginBottom: 12 }}>
-                {user.subscription.status === 'inactive' || user.subscription.status === 'stopping' ? (
-                  <>
-                    <p>Expires: {user.subscription.nextBillingDate}</p>
-                  </>
+                {sub.status === 'inactive' || sub.status === 'stopping' ? (
+                  <p>Expires: {sub.nextBillingDate ?? '—'}</p>
                 ) : (
                   <>
-                    <p>Status: {user.subscription.status}</p>
-                    <p>Next Billing: {user.subscription.nextBillingDate}</p>
+                    <p>Status: {sub.status}</p>
+                    <p>Next Billing: {sub.nextBillingDate ?? '—'}</p>
                   </>
                 )}
               </div>

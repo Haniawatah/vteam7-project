@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import MarkerClusterGroup from '@changey/react-leaflet-markercluster';
 import { useScooters } from '../../hooks/useScooters';
 
 type Props = {
@@ -8,7 +7,7 @@ type Props = {
     height?: number | string;
 };
 
-const DEFAULT_CENTER: [number, number] = [59.3293, 18.0686]; // Stockholm
+const DEFAULT_CENTER: [number, number] = [59.3293, 18.0686]; // Standard: Stockholm
 
 const ScooterMap: React.FC<Props> = ({ setScooterId, height = 420 }) => {
     const { scooters, loading, error } = useScooters(5000);
@@ -17,6 +16,7 @@ const ScooterMap: React.FC<Props> = ({ setScooterId, height = 420 }) => {
     const hasLockedInitialCenter = useRef(false);
 
     useEffect(() => {
+        // Lås startpositionen en gång (så kartan inte hoppar vid polling)
         if (hasLockedInitialCenter.current) return;
         const first = scooters[0];
         if (!first) return;
@@ -75,13 +75,7 @@ const ScooterMap: React.FC<Props> = ({ setScooterId, height = 420 }) => {
                     attribution='&copy; OpenStreetMap contributors'
                 />
 
-                <MarkerClusterGroup
-                    chunkedLoading
-                    removeOutsideVisibleBounds
-                    maxClusterRadius={45}
-                >
-                    {markers}
-                </MarkerClusterGroup>
+                {markers}
             </MapContainer>
         </div>
     );

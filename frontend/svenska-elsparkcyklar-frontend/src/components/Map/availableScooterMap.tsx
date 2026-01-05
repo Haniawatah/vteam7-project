@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import MarkerClusterGroup from '@changey/react-leaflet-markercluster';
 import { availableScooters } from '../../hooks/rentScooters';
 
 type Props = {
@@ -8,7 +7,7 @@ type Props = {
     height?: number | string;
 };
 
-const DEFAULT_CENTER: [number, number] = [59.3293, 18.0686]; // Stockholm
+const DEFAULT_CENTER: [number, number] = [59.3293, 18.0686]; // Standard: Stockholm
 
 const AvailableScooterMap: React.FC<Props> = ({ setScooterId, height = 420 }) => {
     const { scooters, loading, error } = availableScooters(5000);
@@ -17,6 +16,7 @@ const AvailableScooterMap: React.FC<Props> = ({ setScooterId, height = 420 }) =>
     const hasLockedInitialCenter = useRef(false);
 
     useEffect(() => {
+        // Lås startpositionen när vi fått första scootern (så kartan inte hoppar)
         if (hasLockedInitialCenter.current) return;
         const first = scooters[0];
         if (!first) return;
@@ -34,13 +34,11 @@ const AvailableScooterMap: React.FC<Props> = ({ setScooterId, height = 420 }) =>
                     eventHandlers={{ click: () => setScooterId?.(s.id) }}
                 >
                     <Popup>
-                        <strong>ID3:</strong> {s.id}
+                        <strong>ID:</strong> {s.id}
                         <br />
                         <strong>Status:</strong> {s.status}
                         <br />
                         <strong>Battery:</strong> {Math.round(s.batteryLevel)}%
-                        <br />
-                        <strong>City:</strong> {s.city || '—'}
                     </Popup>
                 </Marker>
             )),
@@ -75,13 +73,7 @@ const AvailableScooterMap: React.FC<Props> = ({ setScooterId, height = 420 }) =>
                     attribution='&copy; OpenStreetMap contributors'
                 />
 
-                <MarkerClusterGroup
-                    chunkedLoading
-                    removeOutsideVisibleBounds
-                    maxClusterRadius={45}
-                >
-                    {markers}
-                </MarkerClusterGroup>
+                {markers}
             </MapContainer>
         </div>
     );

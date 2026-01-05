@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { getDb } from '../database.js';
+import * as database from '../database.js';
 import { ObjectId } from 'mongodb';
 
 function normalizeEmail(email) {
@@ -36,7 +36,7 @@ function verifyCard(cardNumber, stored) {
 
 
 export async function usersCol() {
-  const db = await getDb();
+  const db = await database.getDb();
   const col = db.collection('users');
 
   // Keep compatible with an existing "email_1" index (no collation changes here)

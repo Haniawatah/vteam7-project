@@ -1,3 +1,6 @@
+// Hookar för rent-sidan (t.ex. "availableScooters").
+// Håller polling/filtrering för scooters som går att hyra.
+
 import { useEffect, useRef, useState } from 'react';
 import api from '../services/api';
 import type { Scooter, ScooterStatus } from '../types';

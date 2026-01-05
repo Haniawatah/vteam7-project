@@ -1,74 +1,28 @@
 import express from "express";
-import jwt from "jsonwebtoken";
-import { checkPassword, createUser, findUserByEmail, toPublicUser } from "../../models/user.js";
+import { getDb } from '../../database.js';
+import { signToken } from '../../middleware/signtoken.js';
 
 const router = express.Router();
 
-function signToken(user) {
-  const secret = process.env.JWT_SECRET || "dev-secret";
-  return jwt.sign(
-    {
-      sub: String(user._id),
-      email: user.email,
-      role: user.role,
-      name: user.name,
-      wallet: user.wallet,
-      last4: user.last4,
-      enabled: user.enabled,
-      exp_date: user.exp_date,
-      subscription: user.subscription
-    },
-    secret,
-    { expiresIn: "7d" }
-  );
-}
-
-export async function registerHandler(req, res) {
+router.get('/auth/google', async (_req, res, next) => {
   try {
-    const { email, password, name } = req.body || {};
-    if (!email || !password)
-      return res.status(400).json({ error: "email and password required" });
+    const db = getDb();
+    if (!db) return res.status(500).json({ message: 'Database not configured' });
 
-    const user = await createUser({ email, password, name, role: "user" });
-    console.log(user, "register user:---------------------------")
-    const token = signToken(user);
-    return res.json({ token, user: toPublicUser(user) });
-  } catch {
-    return res.status(400).json({ error: "Registration failed" });
+    // dev shortcut: log in as admin
+    const admin = await db.collection('users').findOne({ id: 'u_admin' });
+    if (!admin) return res.status(500).json({ message: 'Admin user missing' });
+
+    const token = signToken(admin);
+    res.redirect(`http://localhost:5173/oauth-success?token=${encodeURIComponent(token)}`);
+  } catch (e) {
+    next(e);
   }
-}
+});
 
-export async function loginHandler(req, res) {
-  const { email, password } = req.body || {};
-  const user = await findUserByEmail(email);
-  console.log("hej------------------", user)
-
-  if (!user || !(await checkPassword(user, password))) {
-    console.log("testing")
-    return res.status(401).json({ error: "Invalid email or password" });
-  }
-
-  const token = signToken(user);
-  return res.json({ token, user: toPublicUser(user) });
-}
-
-export async function adminLoginHandler(req, res) {
-  const { email, password } = req.body || {};
-  const user = await findUserByEmail(email);
-  console.log("hej")
-
-  if (!user || user.role !== "admin" || !checkPassword(user, password)) {
-    return res.status(401).json({ error: "Invalid email or password" });
-  }
-
-  const token = signToken(user);
-  return res.json({ token, user: toPublicUser(user) });
-}
+router.post('/auth/logout', (_req, res) => res.json({ ok: true }));
 
 // Routes under /v1/auth/*
-router.post("/register", registerHandler);
-router.post("/login", loginHandler);
-router.post("/admin/login", adminLoginHandler);
 router.post("/logout", (_req, res) => res.json({ ok: true }));
 
 export default router;

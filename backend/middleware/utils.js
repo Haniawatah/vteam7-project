@@ -1,39 +1,43 @@
 import jwt from 'jsonwebtoken';
+import { getDb } from '../database.js';
 
-function getToken(req) {
-  const auth = req.headers?.authorization;
-  if (typeof auth === 'string' && auth.toLowerCase().startsWith('bearer ')) {
-    return auth.slice(7).trim();
-  }
+// Hämtar token från "Authorization: Bearer ..." eller "x-access-token"
+export function getTokenFromReq(req) {
+  const auth = req.headers?.authorization || '';
+  if (typeof auth === 'string' && auth.toLowerCase().startsWith('bearer ')) return auth.slice(7).trim();
   const x = req.headers?.['x-access-token'];
-  if (typeof x === 'string' && x.trim()) return x.trim();
-  return null;
+  return typeof x === 'string' ? x.trim() : '';
 }
 
-export function authenticate(req, res, next) {
-  const token = getToken(req);
-  if (!token) return res.status(401).json({ error: 'Missing token' });
+// Hjälpfunktion för att skapa HTTP-fel med statuskod
+export function httpError(status, message) {
+  const err = new Error(message);
+  err.status = status;
+  return err;
+}
+
+// Middleware: verifierar JWT och sätter req.user
+export async function authenticate(req, res, next) {
+  const token = getTokenFromReq(req);
+  if (!token) return res.status(401).json({ message: 'Missing token' });
 
   try {
-    const secret = process.env.JWT_SECRET || 'change-me';
-    req.user = jwt.verify(token, secret);
+    const secret = process.env.JWT_SECRET || 'dev-secret-change-me';
+    const decoded = jwt.verify(token, secret);
+
+    const db = getDb();
+    if (!db) return res.status(500).json({ message: 'Database not configured' });
+
+    const userId = decoded.sub || decoded.id;
+    const user = await db.collection('users').findOne({ id: userId });
+    if (!user) return res.status(401).json({ message: 'Invalid token' });
+
+    req.user = user;
     return next();
   } catch {
-    return res.status(401).json({ error: 'Invalid token' });
+    return res.status(401).json({ message: 'Invalid token' });
   }
 }
 
-// Backwards-compat for existing routes importing { checkToken }
+// Bakåtkompatibilitet (vissa routes importerar { checkToken })
 export const checkToken = authenticate;
-
-export function checkAdmin(req, res, next) {
-
-    const userRole = req.user?.role;
-
-    if (userRole !== 'admin') {
-
-        return res.status(403).json({ success: false, message: "Access denied: Admins 2only" });
-    }
-
-    next();
-}

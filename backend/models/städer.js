@@ -1,6 +1,6 @@
 //import openDb from './db/database.mjs';
 
-import database from '../database.js'
+import * as database from '../database.js'
 import { ObjectId } from 'mongodb';
 
 const städer = {

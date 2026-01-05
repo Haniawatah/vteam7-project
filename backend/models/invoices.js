@@ -1,8 +1,8 @@
-import { getDb } from '../database.js';
+import * as database from '../database.js';
 import { ObjectId } from 'mongodb';
 
 export async function invoicesCol() {
-    const db = await getDb();
+    const db = await database.getDb();
     return db.collection('invoices');
 }
 

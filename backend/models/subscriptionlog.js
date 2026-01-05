@@ -1,9 +1,9 @@
-import { getDb } from '../database.js';
+import * as database from '../database.js';
 import { ObjectId } from 'mongodb';
 
 // Get collection
 export async function subscriptionLogCol() {
-    const db = await getDb();
+    const db = await database.getDb();
     return db.collection('subscriptionLog');
 }
 
