@@ -41,8 +41,10 @@ export async function registerHandler(req, res) {
 export async function loginHandler(req, res) {
   const { email, password } = req.body || {};
   const user = await findUserByEmail(email);
+  console.log("hej------------------", user)
 
-  if (!user || !checkPassword(user, password)) {
+  if (!user || !(await checkPassword(user, password))) {
+    console.log("testing")
     return res.status(401).json({ error: "Invalid email or password" });
   }
 
@@ -53,6 +55,7 @@ export async function loginHandler(req, res) {
 export async function adminLoginHandler(req, res) {
   const { email, password } = req.body || {};
   const user = await findUserByEmail(email);
+  console.log("hej")
 
   if (!user || user.role !== "admin" || !checkPassword(user, password)) {
     return res.status(401).json({ error: "Invalid email or password" });

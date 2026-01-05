@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import ScooterMap from '../../components/Map/ScooterMap';
+import AvailableScooterMap from '../../components/Map/availableScooterMap';
 import { rentScooter } from '../../services/scooters';
 import './RentScooter.css';
 
@@ -9,11 +9,26 @@ const RentScooter = () => {
     const [isRenting, setIsRenting] = useState(false);
     const navigate = useNavigate();
 
+
+    const activeScooter = async () => {
+        setIsRenting(true);
+        try {
+            const ride = await rentScooter(scooterId);
+            console.log(ride, "rid2ens")
+            navigate(`/rent/active/${ride._id}`);
+        } catch (error) {
+            alert('Failed to rent scooter. Please try again.');
+        } finally {
+            setIsRenting(false);
+        }
+    };
+
+
     const handleRentScooter = async () => {
         setIsRenting(true);
         try {
             const ride = await rentScooter(scooterId);
-            console.log(ride, "ridens")
+            console.log(ride, "rid2ens")
             navigate(`/rent/active/${ride._id}`);
         } catch (error) {
             alert('Failed to rent scooter. Please try again.');
@@ -32,7 +47,7 @@ const RentScooter = () => {
             </div>
 
             <div className="rent-map">
-                <ScooterMap setScooterId={setScooterId} />
+                <AvailableScooterMap setScooterId={setScooterId} />
             </div>
         </div>
     );

@@ -41,8 +41,11 @@ router.get('/', async (req, res) => {
 //Startar våran ride, (måste fixa scooterId till rideId)
 router.post('/start/:rideId', async (req, res) => {
     const id = req.params.rideId;
+    const user = req.user.sub;
 
     let newData = await elsparkcyklar.getScooterById(id);
+
+    await elsparkcyklar.updateScooterUser(id, user, 'InUse')
 
     console.log(newData, "newdata:")
 
@@ -99,7 +102,7 @@ router.post('/end/:rideId', async (req, res) => {
     const scooterId = req.body.scooterId;
     const userId = req.user.sub
 
-    console.log("hejsan-----------------")
+    await elsparkcyklar.updateScooterUser(scooterId, userId, 'Available')
 
     try {
 

@@ -35,23 +35,31 @@ const RideHistory: React.FC = () => {
         <div>
             <h1>Ride History</h1>
             <ul>
-                {rides.map((ride) => {
-                    const startDate = ride.start_time ? new Date(ride.start_time) : null;
-                    const startTime = new Date(ride.start_time).getTime();
-                    const endTime = new Date(ride.end_time).getTime();
-                    const durationInMs = endTime - startTime;
-                    const duration = Math.ceil(durationInMs / 60000) ?? 0;
-                    const cost = ride.price ?? 0;
+                {rides
+                    //Filtrera så vi bara visar Färdiga logs eftersom den som är aktiv kan synas på aktiv
+                    .filter(ride => ride.status !== 'active')
+                    .map((ride) => {
+                        const startDate = ride.start_time ? new Date(ride.start_time) : null;
 
-                    return (
-                        <li key={ride.id}>
-                            <p>Date: {startDate ? startDate.toLocaleDateString() : '—'}</p>
-                            <p>Scooter ID: {ride.scooterId}</p>
-                            <p>Duration: {duration} minutes</p>
-                            <p>Cost: ${cost.toFixed(2)}</p>
-                        </li>
-                    );
-                })}
+                        let duration = 0;
+                        if (ride.end_time) {
+                            const startTime = new Date(ride.start_time).getTime();
+                            const endTime = new Date(ride.end_time).getTime();
+                            duration = Math.ceil((endTime - startTime) / 60000);
+                        }
+
+                        const cost = ride.price ?? 0;
+
+                        return (
+                            <li key={ride._id}>
+                                <p>Date: {startDate ? startDate.toLocaleDateString() : '—'}</p>
+                                <p>Scooter ID: {ride.scooterId}</p>
+                                <p>Duration: {duration} minutes</p>
+                                <p>Status: {ride.status}</p>
+                                <p>Cost: ${cost.toFixed(2)}</p>
+                            </li>
+                        );
+                    })}
             </ul>
         </div>
     );

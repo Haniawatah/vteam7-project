@@ -36,6 +36,7 @@ export async function addScooter(body) {
         logs: body.logs ?? [],
         createdAt: new Date(),
         updatedAt: new Date(),
+        rentedBy: null
     });
 }
 
@@ -85,6 +86,49 @@ export async function updateScooterStatus(scooterId, status) {
 }
 
 
+//För om en användare har en scooter
+export async function userHasActiveScooter(userId) {
+    const col = await scootersCol();
+    return col.findOne({
+        rentedBy: new ObjectId(userId),
+        status: 'InUse',
+    });
+}
+
+
+//Uppdaterar så att man ser vem som hyrde scootern
+export async function updateScooterUser(scooterId, userId, status) {
+    const col = await scootersCol();
+
+    const result = await col.updateOne(
+        {
+            _id: new ObjectId(scooterId),
+            status: 'Available',
+        },
+        {
+            $set: {
+                status: status,
+                rentedBy: new ObjectId(userId),
+                updatedAt: new Date(),
+            },
+        }
+    );
+
+    return result.modifiedCount === 1;
+}
+
+//Visar scootrarna vi vill se
+export async function getScootersForMap(userId) {
+    const col = await scootersCol();
+
+    return col.find({
+        $or: [
+            { status: 'Available' },
+            { rentedBy: new ObjectId(userId) },
+        ],
+    }).toArray();
+}
+
 
 
 
@@ -104,6 +148,7 @@ export async function seedScootersIfEmpty() {
         position: [59.3293, 18.0686],
         createdAt: now,
         updatedAt: now,
+        rentedBy: null
     },
     {
         name: 'SCOOTER-002',
@@ -113,6 +158,7 @@ export async function seedScootersIfEmpty() {
         position: [59.334, 18.06],
         createdAt: now,
         updatedAt: now,
+        rentedBy: null
     },
     {
         name: 'SCOOTER-003',
@@ -122,6 +168,7 @@ export async function seedScootersIfEmpty() {
         position: [59.325, 18.075],
         createdAt: now,
         updatedAt: now,
+        rentedBy: null
     },
     ];
 
