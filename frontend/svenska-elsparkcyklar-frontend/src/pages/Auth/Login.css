@@ -1,0 +1,113 @@
+/* Split-screen: vänster illustration, höger formulär */
+.auth-split {
+  min-height: calc(100vh - 72px); /* ungefär navbar-höjd */
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  background: var(--bg);
+}
+
+/* Vänster sida */
+.auth-left {
+  position: relative;
+  overflow: hidden;
+  border-right: 1px solid var(--border);
+  background: linear-gradient(135deg, #eef2ff 0%, #ffffff 60%);
+  display: grid;
+  align-content: start;
+  padding: 18px;
+  touch-action: none; /* gör pointermove stabilare */
+}
+
+.auth-left__headline {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.auth-left__brand {
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+.auth-left__sub {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.auth-left__svg {
+  width: 100%;
+  height: min(560px, calc(100vh - 170px));
+  border: 1px solid rgba(229, 231, 235, 0.7);
+  border-radius: 16px;
+  background: #fff;
+}
+
+/* Huvudskakning vid fel input (SVG <g>) */
+.auth-left__svg .char-shake {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: charHeadShake 420ms ease-in-out 1;
+}
+
+@keyframes charHeadShake {
+  0%   { transform: rotate(0deg) translateX(0); }
+  15%  { transform: rotate(-6deg) translateX(-2px); }
+  30%  { transform: rotate(6deg) translateX(2px); }
+  45%  { transform: rotate(-5deg) translateX(-2px); }
+  60%  { transform: rotate(5deg) translateX(2px); }
+  100% { transform: rotate(0deg) translateX(0); }
+}
+
+/* Höger sida */
+.auth-right {
+  display: grid;
+  place-items: center;
+  padding: 20px 16px;
+}
+
+.auth-card {
+  width: min(420px, 92vw);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+}
+
+.auth-title {
+  margin: 0 0 6px;
+}
+
+.auth-subtitle {
+  margin: 0 0 14px;
+  color: var(--muted);
+}
+
+.auth-form {
+  display: grid;
+  gap: 12px;
+}
+
+.auth-form label {
+  display: block;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: var(--text);
+}
+
+/* Mobil: stacka */
+@media (max-width: 900px) {
+  .auth-split {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-left {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .auth-left__svg {
+    height: 340px;
+  }
+}

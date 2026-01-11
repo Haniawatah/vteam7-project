@@ -1,14 +1,27 @@
 :root {
+  /* Scooter-palett (från login-illustrationen) */
+  --accent-yellow: #fde68a;
+  --accent-mint: #a7f3d0;
+  --accent-rose: #fecaca;
+
+  /* Bas */
   --bg: #f7f8fa;
   --surface: #ffffff;
   --text: #111827;
   --muted: #6b7280;
   --border: #e5e7eb;
-  --primary: #2563eb;
-  --primary-hover: #1d4ed8;
+  --radius: 12px;
+
+  /* Primärfärg (teal/grön istället för blå) */
+  --primary: #0f766e;
+  --primary-hover: #115e59;
+
   --danger: #dc2626;
   --danger-hover: #b91c1c;
-  --radius: 12px;
+
+  /* Hjälpfärger för effekter */
+  --focus-ring: rgba(15, 118, 110, 0.18);
+  --soft-shadow: 0 10px 30px rgba(17, 24, 39, 0.10);
 }
 
 *,
@@ -20,7 +33,14 @@
 body {
   margin: 0;
   font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-  background: var(--bg);
+
+  /* Bakgrund med scooter-känsla (subtil, inte “för mycket”) */
+  background:
+    radial-gradient(900px 500px at 12% 8%, rgba(253, 230, 138, 0.45), transparent 55%),
+    radial-gradient(900px 500px at 78% 18%, rgba(167, 243, 208, 0.40), transparent 55%),
+    radial-gradient(900px 500px at 62% 92%, rgba(254, 202, 202, 0.35), transparent 55%),
+    var(--bg);
+
   color: var(--text);
   line-height: 1.45;
 }
@@ -54,6 +74,9 @@ main {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 16px;
+
+  /* lite “mjukt” djup så ytor känns mer levande */
+  box-shadow: var(--soft-shadow);
 }
 
 button,
@@ -64,14 +87,18 @@ button,
   padding: 10px 14px;
   font-weight: 600;
   cursor: pointer;
-  background: var(--primary);
+
+  /* Primärknapp i teal, men med en liten “scooter-glow” */
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
   color: #fff;
-  transition: background 120ms ease, border-color 120ms ease, transform 60ms ease;
+  transition: background 120ms ease, border-color 120ms ease, transform 60ms ease, box-shadow 120ms ease;
+  box-shadow: 0 10px 22px rgba(15, 118, 110, 0.18);
 }
 
 button:hover,
 .button:hover {
-  background: var(--primary-hover);
+  background: linear-gradient(135deg, var(--primary-hover), #0b4f49);
+  box-shadow: 0 12px 26px rgba(15, 118, 110, 0.24);
 }
 
 button:active,
@@ -85,13 +112,18 @@ button:disabled {
 }
 
 button.secondary {
-  background: transparent;
+  background: rgba(255, 255, 255, 0.75);
   color: var(--text);
   border-color: var(--border);
 }
 
 button.secondary:hover {
-  background: #f3f4f6;
+  /* subtil färg från scooter-paletten */
+  background: linear-gradient(
+    135deg,
+    rgba(167, 243, 208, 0.28),
+    rgba(253, 230, 138, 0.22)
+  );
 }
 
 button.danger {
@@ -113,8 +145,8 @@ input, select, textarea {
 
 input:focus, select:focus, textarea:focus {
   outline: none;
-  border-color: rgba(37, 99, 235, 0.5);
-  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+  border-color: rgba(15, 118, 110, 0.55);
+  box-shadow: 0 0 0 4px var(--focus-ring);
 }
 
 .error {
@@ -296,9 +328,9 @@ tbody tr:hover {
 }
 
 .badge--admin {
-  border-color: rgba(37, 99, 235, 0.35);
-  background: rgba(37, 99, 235, 0.08);
-  color: #1d4ed8;
+  border-color: rgba(15, 118, 110, 0.35);
+  background: rgba(15, 118, 110, 0.10);
+  color: var(--primary);
 }
 
 @media (max-width: 900px) {
