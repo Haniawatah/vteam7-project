@@ -1,14 +1,17 @@
 import jwt from 'jsonwebtoken';
+import { getJwtSecret } from './utils.js';
 
-// Skapar en JWT-token som frontend sparar i localStorage.
-// Payload innehåller id/email/role så UI kan veta om användaren är admin.
 export function signToken(user) {
-  const secret = process.env.JWT_SECRET || 'dev-secret-change-me';
-  const expiresIn = process.env.TOKEN_EXPIRES_IN || '7d';
+  const secret = getJwtSecret();
+  if (!secret) throw new Error('JWT secret is not configured');
 
-  return jwt.sign(
-    { sub: user.id, id: user.id, email: user.email, role: user.role, name: user.name },
-    secret,
-    { expiresIn }
-  );
+  const payload = {
+    id: user?.id ?? user?._id,
+    email: user?.email,
+    role: user?.role ?? user?.roll ?? 'user',
+  };
+
+  return jwt.sign(payload, secret, { expiresIn: '7d' });
 }
+
+export default signToken;

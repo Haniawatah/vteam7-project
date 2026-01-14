@@ -10,11 +10,19 @@ import { toPublicUser, getWallet } from "../../models/user.js";
 import { checkToken } from '../../middleware/utils.js';
 import { signToken } from '../../middleware/signtoken.js';
 import { getDb } from '../../database.js';
-import requireAdmin from '../../middleware/admin.js';
+import requireAdminDefault, { requireAdmin as requireAdminNamed } from '../../middleware/admin.js';
+import { authenticate } from '../../middleware/passport.js';
 
 const router = express.Router();
 
 router.use(checkToken);
+
+const requireAdmin =
+  typeof requireAdminDefault === 'function'
+    ? requireAdminDefault
+    : typeof requireAdminNamed === 'function'
+      ? requireAdminNamed
+      : null;
 
 // GET all users
 router.get('/', async (req, res) => {
@@ -273,6 +281,44 @@ router.delete('/users/:id', requireAdmin, async (req, res) => {
 });
 
 
+
+// här kommer några fixes till user profil för det gick inte att visa.
+
+
+router.get('/user/profile', authenticate, async (req, res) => {
+  try {
+    const db = getDb();
+    const users = db.collection('users');
+
+    const userId = req.user?.id ?? req.user?._id ?? null;
+    const email = req.user?.email ?? null;
+
+    const u =
+      (userId ? await users.findOne({ id: userId }) : null) ||
+      (email ? await users.findOne({ email }) : null);
+
+    if (!u) return res.status(404).json({ message: 'User not found' });
+
+    // Never return password fields
+    const profile = {
+      id: String(u.id ?? u._id ?? ''),
+      name: String(u.name ?? u.username ?? ''),
+      email: String(u.email ?? ''),
+      role: String(u.role ?? u.roll ?? 'user'),
+      wallet: Number(u.wallet ?? u.balance ?? 0),
+      enabled: Boolean(u.enabled ?? true),
+      last4: u.last4 ?? null,
+      exp_date: u.exp_date ?? null,
+      subscription: u.subscription ?? { status: 'inactive', nextBillingDate: null, monthlyFee: 0 },
+      rides: Array.isArray(u.rides) ? u.rides : [],
+    };
+
+    return res.json(profile);
+  } catch (e) {
+    console.error('[user/profile] failed:', e);
+    return res.status(500).json({ message: 'Failed to fetch profile' });
+  }
+});
 
 router.get('/:email', async (req, res) => {
     const email = req.params.email;

@@ -22,19 +22,26 @@ app.use((err, _req, res, _next) => {
   res.status(status).json({ message: err?.message || 'Server error' });
 });
 
-const port = Number(process.env.PORT || 3000);
+const PORT = process.env.PORT || 3000;
+const HOST = process.env.HOST || '0.0.0.0';
 
 (async () => {
   // Startar servern + kopplar DB + seedar basdata.
   // Viktigt: mount under /v1 eftersom frontend proxar /v1 -> backend:3000
   await connectDb();
+
+  // after connectDb() + before/after seedBootstrap()
+  console.log(`[bootstrap] SEED_SCOOTERS=${process.env.SEED_SCOOTERS ?? '(unset)'}`);
+
   await seedBootstrap();
 
   // Simuleringstimer: uppdaterar scooter-position och batteri under aktiv resa
   const tickMs = Number(process.env.SIM_TICK_MS || 3000);
   setInterval(() => void tickSimulation(), Number.isFinite(tickMs) ? tickMs : 3000);
 
-  app.listen(port, () => console.log(`Backend listening on http://localhost:${port}`));
+  app.listen(PORT, HOST, () => {
+    console.log(`Backend listening on http://${HOST}:${PORT}`);
+  });
 })().catch((e) => {
   console.error('Fatal startup error:', e);
   process.exit(1);

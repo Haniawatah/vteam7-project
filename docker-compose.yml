@@ -1,0 +1,48 @@
+services:
+  mongo:
+    image: mongo:6
+    container_name: vteam7-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: vteam7-backend
+    env_file:
+      - ./backend/.env
+    # --- ---
+    environment:
+      - DATABASE_URL=mongodb://mongo:27017/elsparkcyklar
+      - SEED_SCOOTERS=0
+      - PORT=3000
+    # -------------------------------
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mongo
+    restart: unless-stopped
+
+  simulator:
+    build:
+      context: ./backend
+      dockerfile: sim/Dockerfile
+    container_name: vteam7-simulator
+    environment:
+      SIM_API_URL: http://backend:3000/v1
+      SIM_USERS: "1000"
+      SIM_SCOOTERS: "1000"
+      SIM_ACTIVE_TARGET: "250"
+      SIM_CONCURRENCY: "50"
+      SIM_ADMIN_EMAIL: "Hani@gmail.com"
+      SIM_ADMIN_PASSWORD: "123"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  mongo_data:

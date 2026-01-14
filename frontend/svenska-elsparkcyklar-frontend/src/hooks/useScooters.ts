@@ -80,7 +80,8 @@ export function useScooters(pollMs = 5000) {
   const load = async (showLoading: boolean) => {
     setState((s) => ({ ...s, loading: showLoading || s.scooters.length === 0, error: null }));
     try {
-      const res = await api.get('/scooters');
+      const res = await api.get('/scooters?limit=1000');
+
       const list = extractList(res.data);
       const normalized = list.map(normalizeScooter).filter((s) => s.id).filter(hasValidLocation);
       setState({ scooters: normalized, loading: false, error: null });

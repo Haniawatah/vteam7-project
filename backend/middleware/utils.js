@@ -41,3 +41,14 @@ export async function authenticate(req, res, next) {
 
 // Bakåtkompatibilitet (vissa routes importerar { checkToken })
 export const checkToken = authenticate;
+
+// Gemensam funktion för att hämta JWT-secret
+export function getJwtSecret() {
+  return (
+    process.env.JWT_SECRET ||
+    process.env.ACCESS_TOKEN_SECRET ||
+    process.env.SECRET ||
+    process.env.SECRET_KEY ||
+    ''
+  );
+}

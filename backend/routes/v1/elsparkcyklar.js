@@ -1,77 +1,106 @@
 import express from 'express';
-
 import { getDb } from '../../database.js';
-import { authenticate } from '../../middleware/utils.js';
-import requireAdmin from '../../middleware/admin.js';
+import { authenticate } from '../../middleware/passport.js';
+import { requireAdmin } from '../../middleware/admin.js';
 
 const router = express.Router();
 
-// Normaliserar DB-dokument till formatet frontend använder:
-// { id, status, batteryLevel, location:{lat,lng}, city }
-function normalize(doc) {
-  return {
-    id: String(doc?.id ?? ''),
-    status: String(doc?.status ?? 'Off'),
-    batteryLevel: Number(doc?.batteryLevel ?? 0),
-    location: doc?.location ?? { lat: 0, lng: 0 },
-    city: String(doc?.city ?? 'Stockholm'),
-  };
-}
+const parseLimit = (v) => {
+  const raw = String(v ?? '').trim().toLowerCase();
+  if (!raw || raw === 'all' || raw === '0') return 0;
+  const n = Number(raw);
+  return Number.isFinite(n) && n > 0 ? Math.min(5000, Math.floor(n)) : 0;
+};
 
-// MUST be '/scooters' (frontend calls GET /v1/scooters)
-// GET /scooters: alla scooters (för kartor)
-router.get('/scooters', async (_req, res, next) => {
+const parsePage = (v) => {
+  const n = Number(String(v ?? '').trim());
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : 1;
+};
+
+// PUBLIC: list scooters (map/admin list)
+router.get('/scooters', async (req, res) => {
   try {
     const db = getDb();
-    if (!db) return res.json([]);
+    const col = db.collection('scooters');
 
-    const docs = await db.collection('scooters').find({}).toArray();
-    res.json(docs.map(normalize).filter((s) => s.id));
+    const limit = parseLimit(req.query.limit);
+    const page = parsePage(req.query.page);
+    const skip = limit ? (page - 1) * limit : 0;
+
+    const cursor = col.find({}).sort({ _id: 1 });
+    if (skip) cursor.skip(skip);
+    if (limit) cursor.limit(limit);
+
+    const [items, total] = await Promise.all([cursor.toArray(), col.countDocuments({})]);
+
+    res.setHeader('X-Total-Count', String(total));
+    res.setHeader('X-Returned-Count', String(items.length));
+    res.setHeader('X-Limit', String(limit));
+    res.setHeader('X-Page', String(page));
+
+    return res.json(items);
   } catch (e) {
-    next(e);
+    console.error('[v1/scooters] failed:', e);
+    return res.status(500).json({ message: 'Failed to fetch scooters' });
   }
 });
 
-// GET only available scooters (safe extra endpoint in case rent hook uses it)
-// GET /scooters/available: bara "Available" (för rent-sidan)
-router.get('/scooters/available', async (_req, res, next) => {
+// PUBLIC: available scooters for rent map
+router.get('/scooters/available', async (req, res) => {
   try {
     const db = getDb();
-    if (!db) return res.json([]);
-
-    const docs = await db.collection('scooters').find({ status: 'Available' }).toArray();
-    res.json(docs.map(normalize).filter((s) => s.id));
+    const col = db.collection('scooters');
+    const items = await col.find({ status: 'Available' }).toArray();
+    return res.json(items);
   } catch (e) {
-    next(e);
+    console.error('[v1/scooters/available] failed:', e);
+    return res.status(500).json({ message: 'Failed to fetch available scooters' });
   }
 });
 
-// GET scooter by ID (for admin + frontend details view)
-router.get('/scooters/:id', async (req, res, next) => {
+// ADMIN: create scooter (used by simulator when admin creds exist)
+router.post('/scooters', authenticate, requireAdmin, async (req, res) => {
   try {
     const db = getDb();
-    if (!db) return res.status(500).json({ message: 'Database not configured' });
+    const col = db.collection('scooters');
 
-    const doc = await db.collection('scooters').findOne({ id: req.params.id });
-    if (!doc) return res.status(404).json({ message: 'Not found' });
+    const body = req.body ?? {};
+    const doc = {
+      id: body.id,
+      model: body.model ?? 'SIM',
+      city: body.city ?? 'Stockholm',
+      status: body.status ?? 'Available',
+      batteryLevel: Number.isFinite(Number(body.batteryLevel)) ? Number(body.batteryLevel) : 100,
+      location: body.location ?? { lat: 59.3293, lng: 18.0686 },
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
 
-    res.json(normalize(doc));
+    await col.insertOne(doc);
+    return res.status(201).json(doc);
   } catch (e) {
-    next(e);
+    console.error('[v1/scooters POST] failed:', e);
+    return res.status(500).json({ message: 'Failed to create scooter' });
   }
 });
 
-// Admin delete (keep working; now requiresAdmin is always defined)
-// Admin: ta bort scooter (kräver token + admin-roll)
-router.delete('/scooters/:id', authenticate, requireAdmin, async (req, res, next) => {
+/**
+ * ADMIN: delete scooter
+ * DELETE /v1/scooters/:id
+ */
+router.delete('/scooters/:id', authenticate, requireAdmin, async (req, res) => {
   try {
     const db = getDb();
-    if (!db) return res.status(500).json({ message: 'Database not configured' });
+    const col = db.collection('scooters');
 
-    await db.collection('scooters').deleteOne({ id: req.params.id });
-    res.json({ ok: true });
+    const id = String(req.params.id);
+    const filter = looksLikeObjectId(id) ? { _id: new ObjectId(id) } : { id };
+
+    const r = await col.deleteOne(filter);
+    return res.json({ ok: true, deletedCount: r.deletedCount ?? 0 });
   } catch (e) {
-    next(e);
+    console.error('[v1/scooters DELETE] failed:', e);
+    return res.status(500).json({ message: 'Failed to delete scooter' });
   }
 });
 

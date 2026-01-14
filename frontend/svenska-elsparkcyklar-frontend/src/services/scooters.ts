@@ -10,7 +10,7 @@ const tokenHeader = () => {
 
 export const fetchScooters = async () => {
     try {
-        const res = await api.get('/scooters', {
+        const res = await api.get('/scooters?limit=1000', {
             headers: {
                 'Content-Type': 'application/json',
                 ...tokenHeader(),

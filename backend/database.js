@@ -1,36 +1,50 @@
 import crypto from 'crypto';
 import { MongoClient } from 'mongodb';
 
-let _client = null;
-let _db = null;
+let _client;
+let _db;
 
 // In-memory (minne) för aktiva rides så vi kan simulera rörelse/batteri
 export const mem = {
   rides: new Map(), // rideId -> ride
 };
 
-export function getDb() {
-  // Returnerar MongoDB-anslutningen (kan vara null om DB ej kopplad)
-  return _db;
-}
-
-function mongoUri() {
-  return process.env.MONGODB_URI || process.env.MONGODB_URL || process.env.DATABASE_URL || '';
+function dbNameFromUri(uri) {
+  try {
+    const u = new URL(uri);
+    const name = (u.pathname || '').replace('/', '').trim();
+    return name || null;
+  } catch {
+    return null;
+  }
 }
 
 export async function connectDb() {
   if (_db) return _db;
 
-  const uri = mongoUri();
-  if (!uri) throw new Error('Missing MongoDB URI (set MONGODB_URI or MONGODB_URL).');
+  const uri = process.env.DATABASE_URL || process.env.MONGODB_URI;
+  if (!uri) throw new Error('DATABASE_URL is not configured');
 
   _client = new MongoClient(uri);
   await _client.connect();
 
-  const dbName = process.env.MONGODB_DB || undefined;
-  _db = dbName ? _client.db(dbName) : _client.db();
+  const name = dbNameFromUri(uri) || process.env.DB_NAME || 'elsparkcyklar';
+  _db = _client.db(name);
 
   return _db;
+}
+
+export function getDb() {
+  if (!_db) {
+    throw new Error('DB not connected (call connectDb() during startup)');
+  }
+  return _db;
+}
+
+export async function closeDb() {
+  if (_client) await _client.close();
+  _client = undefined;
+  _db = undefined;
 }
 
 // --- Lösenordshjälp (saltet + hash) utan extra bibliotek ---
@@ -124,22 +138,34 @@ export async function migrateScootersToCanonicalSchema() {
 }
 
 // Ser till att det finns minst X scooters i databasen (skapar bara "saknade")
-export async function ensureScooters(minCount = 50) {
+export async function ensureScooters(minCount = 0) {
   const db = getDb();
   if (!db) return { ok: false, reason: 'no-db' };
 
+  // Only seed scooters if explicitly enabled via env (>0) OR explicit minCount (>0).
+  const envTargetRaw = process.env.SEED_SCOOTERS;
+  const envTarget = Number.isFinite(Number(envTargetRaw)) ? Math.max(0, Number(envTargetRaw)) : 0;
+
+  // Prefer explicit arg if passed, otherwise env. Default is 0 => do not seed.
+  const target = Number.isFinite(Number(minCount)) ? Math.max(0, Number(minCount)) : 0;
+  const finalTarget = target > 0 ? target : envTarget;
+
+  if (finalTarget <= 0) {
+    return { ok: true, seeded: 0, total: await db.collection('scooters').countDocuments(), target: finalTarget };
+  }
+
   const col = db.collection('scooters');
   const count = await col.countDocuments();
-  if (count >= minCount) return { ok: true, seeded: 0, total: count };
+  if (count >= finalTarget) return { ok: true, seeded: 0, total: count, target: finalTarget };
 
-  const missing = minCount - count;
+  const missing = finalTarget - count;
   const CENTER = { lat: 59.3293, lng: 18.0686 };
   const now = new Date();
 
   const docs = Array.from({ length: missing }, (_, i) => {
     const n = count + i + 1;
     return {
-      id: `SCOOT-${String(n).padStart(3, '0')}`,
+      id: `SCOOT-${String(n).padStart(4, '0')}`,
       status: 'Available',
       batteryLevel: 100,
       city: 'Stockholm',
@@ -150,7 +176,7 @@ export async function ensureScooters(minCount = 50) {
   });
 
   const res = await col.insertMany(docs, { ordered: false });
-  return { ok: true, seeded: res.insertedCount, total: count + res.insertedCount };
+  return { ok: true, seeded: res.insertedCount, total: count + res.insertedCount, target };
 }
 
 // Skapar/uppdaterar admin-användaren från .env (så admin-login fungerar efter env-ändring)
@@ -193,7 +219,9 @@ export async function ensureAdminUser() {
 export async function seedBootstrap() {
   await ensureAdminUser();
   await migrateScootersToCanonicalSchema();
-  await ensureScooters(50);
+
+  // IMPORTANT: do NOT auto-seed scooters unless SEED_SCOOTERS > 0 (or ensureScooters called with >0)
+  await ensureScooters(0);
 }
 
 // Simulering: flytta scooter + dra batteri för aktiva rides

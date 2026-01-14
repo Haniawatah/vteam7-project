@@ -1,6 +1,7 @@
 //import openDb from './db/database.mjs';
 
 import { ObjectId } from 'mongodb';
+import mongoose from 'mongoose';
 
 import { getDb } from '../database.js';
 
@@ -175,6 +176,23 @@ export async function seedScootersIfEmpty() {
     const res = await col.insertMany(seed);
     return { ok: true, seeded: res.insertedCount };
 }
+
+const ElsparkcykelSchema = new mongoose.Schema(
+  {
+    id: { type: String, index: true, unique: true, sparse: true },
+    model: { type: String, default: 'GEN' },
+    city: { type: String, default: 'Stockholm' },
+    status: { type: String, default: 'Available' },
+    batteryLevel: { type: Number, default: 100 },
+    location: {
+      lat: { type: Number, default: 0 },
+      lng: { type: Number, default: 0 },
+    },
+  },
+  { timestamps: true }
+);
+
+export default mongoose.models.Elsparkcykel || mongoose.model('Elsparkcykel', ElsparkcykelSchema);
 
 
 
