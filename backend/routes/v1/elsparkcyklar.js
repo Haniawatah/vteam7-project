@@ -47,6 +47,7 @@ router.get('/scooters', async (req, res) => {
 
 // PUBLIC: available scooters for rent map
 router.get('/scooters/available', async (req, res) => {
+  console.log("hej")
   try {
     const db = getDb();
     const col = db.collection('scooters');
@@ -83,6 +84,8 @@ router.post('/scooters', authenticate, requireAdmin, async (req, res) => {
     return res.status(500).json({ message: 'Failed to create scooter' });
   }
 });
+
+
 
 /**
  * ADMIN: delete scooter

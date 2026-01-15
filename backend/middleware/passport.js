@@ -1,71 +1,86 @@
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
-import jwt from "jsonwebtoken";
-import { getJwtSecret } from "./utils.js";
+import { getDb, makeSalt, hashPassword, verifyPassword } from '../database.js';
 
-const hasGoogleEnv =
-  Boolean(process.env.GOOGLE_CLIENT_ID) &&
-  Boolean(process.env.GOOGLE_CLIENT_SECRET) &&
-  Boolean(process.env.GOOGLE_CALLBACK_URL);
 
-if (hasGoogleEnv) {
-  passport.use(
-    new GoogleStrategy(
-      {
+passport.use(new GoogleStrategy(
+    {
         clientID: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        callbackURL: process.env.GOOGLE_CALLBACK_URL,
-      },
-      async (_accessToken, _refreshToken, profile, done) => {
+        callbackURL: "/v1/auth/google/callback",
+    },
+    async (accessToken, refreshToken, profile, done) => {
         try {
-          const email = profile.emails[0].value;
+            //Get Db
+            const db = getDb();
+            if (!db) return res.status(500).json({ message: 'Database not configured' });
 
-          let account = await user.getOne(email);
+            //Fixes the email
+            const email = profile.emails[0].value;
 
-          if (!account) {
-            account = await user.register({
-              email,
-              name: profile.displayName,
-              wallet: 0,
-              roll: "user",
-              oauthProvider: "google",
-            });
-          }
+            //Fixes the database to users, and checks if a a user with that email exsists
+            const users = db.collection('users');
+            const account = await users.findOne({ email: String(email) });
 
-          return done(null, account);
+            //Fixes the password and name
+            const password = null
+            const name = profile.displayName
+
+            const salt = makeSalt();
+            const passwordHash = hashPassword(password, salt);
+
+            if (!account) {
+                const user = {
+                    id: `u_${crypto.randomUUID()}`,
+                    name: name || String(email).split('@')[0],
+                    email: String(email),
+                    role: 'user',
+                    wallet: 0,
+                    enabled: false,
+                    payment_information: { card_id: null, cardHash: null, last4: null, expiryDate: null, enabled: null,},
+                    subscription: { status: 'inactive', nextBillingDate: null, monthlyFee: 0 },
+                    passwordSalt: salt,
+                    passwordHash,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                };
+                await users.insertOne(user);
+            }
+
+        return done(null, account);
         } catch (err) {
-          return done(err, null);
+        return done(err, null);
         }
-      }
-    )
-  );
-}
+    }
+    ));
+
 
 function getToken(req) {
-  const auth = req.headers?.authorization || req.headers?.Authorization || "";
-  if (typeof auth === "string" && auth.toLowerCase().startsWith("bearer ")) {
-    return auth.slice(7).trim();
-  }
-  const x = req.headers?.["x-access-token"];
-  if (typeof x === "string" && x.trim()) return x.trim();
-  return "";
+    const auth = req.headers?.authorization || req.headers?.Authorization || "";
+    if (typeof auth === "string" && auth.toLowerCase().startsWith("bearer ")) {
+        return auth.slice(7).trim();
+    }
+    const x = req.headers?.["x-access-token"];
+    if (typeof x === "string" && x.trim()) return x.trim();
+    return "";
 }
 
 export function authenticate(req, res, next) {
-  const token = getToken(req);
-  if (!token) return res.status(401).json({ message: "Missing token" });
+    const token = getToken(req);
+    if (!token) return res.status(401).json({ message: "Missing token" });
 
-  const secret = getJwtSecret();
-  if (!secret)
-    return res.status(500).json({ message: "JWT secret is not configured" });
+    const secret = getJwtSecret();
+    if (!secret)
+        return res.status(500).json({ message: "JWT secret is not configured" });
 
-  try {
-    req.user = jwt.verify(token, secret);
-    return next();
-  } catch {
-    return res.status(401).json({ message: "Invalid token" });
-  }
+    try {
+        req.user = jwt.verify(token, secret);
+        return next();
+    } catch {
+        return res.status(401).json({ message: "Invalid token" });
+    }
 }
 
-// Default export as function too (avoids import mismatches)
-export default authenticate;
+
+
+export default passport;

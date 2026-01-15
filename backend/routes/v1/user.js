@@ -25,7 +25,7 @@ const requireAdmin =
       : null;
 
 // GET all users
-router.get('/', async (req, res) => {
+router.get('/users', async (req, res) => {
     const data = await user.getAll();
     res.status(200).json(data);
 });
@@ -40,6 +40,7 @@ router.post("/register", async (req, res) => {
 
 
 router.get('/profile', async (req, res) => {
+    console.log("hejsan")
     const userEmail = req.user.email;
 
     console.log(req.user, "users")
@@ -57,7 +58,7 @@ router.get('/profile', async (req, res) => {
 
 
 router.get('/payment', async (req, res) => {
-    const userId = req.user.sub;
+    const userId = req.user._id;
 
     const data = await user.getPaymentInfo(userId);
     
@@ -72,7 +73,7 @@ router.get('/payment', async (req, res) => {
 router.put('/payment', async (req, res) => {
   console.log("payment route hit");
   try {
-    const userId = req.user.sub;
+    const userId = req.user._id;
     if (!userId) return res.status(401).json({ success: false, error: 'Invalid token' });
 
     const { cardNumber, expiryDate } = req.body;
@@ -99,7 +100,7 @@ router.put('/payment', async (req, res) => {
 
 router.put('/wallet/add', async (req, res) => {
     const userEmail = req.user.email;
-    const userId = req.user.sub;
+    const userId = req.user._id;
     const amount = Number(req.body.amount);
 
     if (!amount || amount <= 0) {
@@ -129,7 +130,7 @@ router.put('/wallet/add', async (req, res) => {
 
 router.get('/wallet', async (req, res) => {
 
-    const wallet = await getWallet(req.user.sub);
+    const wallet = await getWallet(req.user._id);
 
     console.log(wallet)
     res.status(200).json({ success: true, wallet });
@@ -142,7 +143,7 @@ router.get('/wallet', async (req, res) => {
 router.get('/subscription', async (req, res) => {
     console.log(req.user, "route:ska")
     try {
-        const subscription = await user.getSubscription(req.user.sub);
+        const subscription = await user.getSubscription(req.user._id);
 
         console.log(subscription)
         res.status(200).json({ success: true, subscription });
@@ -155,7 +156,8 @@ router.get('/subscription', async (req, res) => {
 
 
 router.post('/subscription/start', async (req, res) => {
-    const userId = req.user.sub;
+    const userId = req.user._id;
+    const email = req.user.email;
 
     const payment = await user.getPaymentInfo(userId);
 
@@ -174,6 +176,7 @@ router.post('/subscription/start', async (req, res) => {
     const logData = {
         user_id: userId,
         card_id: payment.card_id,
+        email: email,
         amount: 1000,
         date: currentDate,
         type: "subscribe"
@@ -191,7 +194,8 @@ router.post('/subscription/start', async (req, res) => {
 
 
 router.put('/subscription/cancel', async (req, res) => {
-    const userId = req.user.sub;
+    const userId = req.user._id;
+    const email = req.user.email;
 
     const currentSubscription = await user.getSubscription(userId);
 
@@ -209,9 +213,44 @@ router.put('/subscription/cancel', async (req, res) => {
     const logData = {
         user_id: userId,
         card_id: payment.card_id,
+        email: email,
         amount: 1000,
         date: currentDate,
         type: "cancel"
+    };
+
+    await subscriptionLog.addOne(logData)
+
+    const updated = await user.updateSubscription(userId, subscriptionData);
+    res.status(200).json({ success: true, subscription: updated });
+});
+
+
+//Aktiver sub igen
+router.post('/subscription/reactivate', async (req, res) => {
+    const userId = req.user._id;
+    const email = req.user.email;
+
+    const currentSubscription = await user.getSubscription(userId);
+
+    const payment = await user.getPaymentInfo(userId);
+
+    const currentDate = new Date();
+
+    const subscriptionData = {
+        status: 'active',
+        monthlyFee: 1000,
+        lastBilled: currentSubscription.lastBilled,
+        nextBillingDate: currentSubscription.nextBillingDate
+    };
+
+    const logData = {
+        user_id: userId,
+        card_id: payment.card_id,
+        email: email,
+        amount: 1000,
+        date: currentDate,
+        type: "Reactivated"
     };
 
     await subscriptionLog.addOne(logData)
@@ -245,7 +284,8 @@ router.get('/users', requireAdmin, async (_req, res) => {
   }
 });
 
-router.patch('/users/:id', requireAdmin, async (req, res) => {
+//Ändra roll på konto
+router.patch('/role/:id', requireAdmin, async (req, res) => {
   const { id } = req.params;
   const role = req.body?.role === 'admin' ? 'admin' : 'user';
 
@@ -263,7 +303,7 @@ router.patch('/users/:id', requireAdmin, async (req, res) => {
   }
 });
 
-router.delete('/users/:id', requireAdmin, async (req, res) => {
+router.delete('/delete/:id', requireAdmin, async (req, res) => {
   const { id } = req.params;
 
   try {

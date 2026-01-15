@@ -122,3 +122,106 @@ export const endScooter = async (scooterId: string) => {
         throw new Error('Error renting scooter: ' + toMessage(error));
     }
 };
+
+
+// Charge a scooter
+export const parkScooter = async (scooterId: string, station: string) => {
+    let token = localStorage.getItem("token");
+    try {
+        const response = await api.post(`/parking/scooter/${scooterId}/park`,
+            { station }, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'x-access-token': token,
+            }
+        });
+
+        return response.data;
+    } catch (error) {
+        throw new Error('Error renting scooter: ' + toMessage(error));
+    }
+};
+
+
+
+// Put scooter in parking station
+export const chargingScooter = async (scooterId: string, station: string) => {
+    let token = localStorage.getItem("token");
+    try {
+        const response = await api.post(`/charging/scooter/${scooterId}/charge`,
+            { station }, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'x-access-token': token,
+            }
+        });
+
+        return response.data;
+    } catch (error) {
+        throw new Error('Error renting scooter: ' + toMessage(error));
+    }
+};
+
+
+
+// Remove scooter from charge station
+export const unChargingScooter = async (scooterId: string, station: string) => {
+    let token = localStorage.getItem("token");
+    try {
+        const response = await api.post(`/charging/scooter/${scooterId}/uncharge`,
+            { station }, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'x-access-token': token,
+            }
+        });
+
+        return response.data;
+    } catch (error) {
+        throw new Error('Error renting scooter: ' + toMessage(error));
+    }
+};
+
+
+// Remove scooter from parking station
+export const unParkScooter = async (scooterId: string, station: string) => {
+    let token = localStorage.getItem("token");
+    try {
+        const response = await api.post(`/parking/scooter/${scooterId}/unpark`,
+            { station }, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'x-access-token': token,
+            }
+        });
+
+        return response.data;
+    } catch (error) {
+        throw new Error('Error renting scooter: ' + toMessage(error));
+    }
+};
+
+
+// Get available for adding
+export const fetchScootersAvailable = async () => {
+    try {
+        const res = await api.get('/scooters/available', {
+            headers: {
+                'Content-Type': 'application/json',
+                ...tokenHeader(),
+            },
+        });
+        return res.data;
+    } catch (error) {
+        throw new Error('Error fetching scooters: ' + toMessage(error));
+    }
+};
+

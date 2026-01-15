@@ -21,6 +21,9 @@ import ProtectedRoute from '../components/ProtectedRoute';
 import Payments from '../pages/Profile/Payments';
 import MonthlySubscription from '../pages/Profile/MonthlyPayment';
 
+import ChargeScooter from '../pages/Admin/AddCharging';
+import ParkingScooter from '../pages/Admin/AddParking';
+
 import OAuthSuccess from '../services/oauth';
 
 const AppRoutes = () => {
@@ -57,6 +60,8 @@ const AppRoutes = () => {
                 <Route path="scooters" element={<Scooters />} />
                 <Route path="users" element={<Users />} />
                 <Route path="reports" element={<Reports />} />
+                <Route path="charge/add/:stationId" element={<ChargeScooter />} />
+                <Route path="parking/add/:stationId" element={<ParkingScooter />} />
             </Route>
         </Routes>
     );

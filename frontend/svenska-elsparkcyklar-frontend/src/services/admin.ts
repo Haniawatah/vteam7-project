@@ -33,7 +33,7 @@ export async function fetchUsersAdmin() {
 // Optional admin actions (requires backend support)
 export async function updateUserRoleAdmin(userId: string, role: 'admin' | 'user') {
   const res = await api.patch(
-    `/users/${encodeURIComponent(userId)}`,
+    `/user/role/${encodeURIComponent(userId)}`,
     { role },
     { headers: { 'Content-Type': 'application/json', ...tokenHeader() } }
   );
@@ -41,18 +41,50 @@ export async function updateUserRoleAdmin(userId: string, role: 'admin' | 'user'
 }
 
 export async function deleteUserAdmin(userId: string) {
-  const res = await api.delete(`/users/${encodeURIComponent(userId)}`, {
+  const res = await api.delete(`/user/delete/${encodeURIComponent(userId)}`, {
     headers: { 'Content-Type': 'application/json', ...tokenHeader() },
   });
   return res.data;
 }
 
 // Stations
-export async function fetchStationsAdmin() {
-  return await tryGet(['/stations', '/cities']);
+export async function fetchParkingStationsAdmin() {
+  const res = await api.get(`/parking/stations`, {
+    headers: { 'Content-Type': 'application/json', ...tokenHeader() },
+  });
+  console.log(res.data, "--------------")
+  return res.data;
 }
+
+
+// Stations
+export async function fetchChargingStationsAdmin() {
+  const res = await api.get(`/charging/stations`, {
+    headers: { 'Content-Type': 'application/json', ...tokenHeader() },
+  });
+  console.log(res.data, "--------------")
+  return res.data;
+}
+
+// Stations
+export async function fetchChargingAdmin() {
+  const res = await api.get(`/charging/stations`, {
+    headers: { 'Content-Type': 'application/json', ...tokenHeader() },
+  });
+  console.log(res.data, "--------------")
+  return res.data;
+}
+
 
 // Logs / ride history
 export async function fetchLogsAdmin() {
   return await tryGet(['/rides/history', '/logs']);
+}
+
+export async function fetchSubscriptionsAdmin() {
+  const res = await api.get(`/logs/subs`, {
+    headers: { 'Content-Type': 'application/json', ...tokenHeader() },
+  });
+  console.log(res.data, "--------------")
+  return res.data;
 }

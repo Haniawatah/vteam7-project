@@ -5,21 +5,27 @@ import ScootersPanel from './dashboard/ScootersPanel';
 import UsersPanel from './dashboard/UsersPanel';
 import StationsPanel from './dashboard/StationsPanel';
 import LogsPanel from './dashboard/LogsPanel';
+import SubscriptionPanel from './dashboard/Subscription';
+import ChargingPanel from './dashboard/ChargingPanel';
 
-type TabKey = 'scooters' | 'users' | 'stations' | 'logs';
+type TabKey = 'scooters' | 'users' | 'stations' | 'logs' | 'subscriptionLogs' | 'charging';
 
 const TABS: Array<{ key: TabKey; label: string }> = [
   { key: 'scooters', label: 'Scooters' },
   { key: 'users', label: 'Users' },
   { key: 'stations', label: 'Stations' },
+  { key: 'charging', label: 'charging' },
   { key: 'logs', label: 'Logs' },
+  { key: 'subscriptionLogs', label: 'subscriptionLogs' },
 ];
 
 function coerceTab(value: string | null): TabKey {
   switch (value) {
     case 'users':
     case 'stations':
+    case 'charging':
     case 'logs':
+    case 'subscriptionLogs':
     case 'scooters':
       return value;
     default:
@@ -73,7 +79,9 @@ const Dashboard: React.FC = () => {
         {active === 'scooters' ? <ScootersPanel /> : null}
         {active === 'users' ? <UsersPanel /> : null}
         {active === 'stations' ? <StationsPanel /> : null}
+        {active === 'charging' ? <ChargingPanel /> : null}
         {active === 'logs' ? <LogsPanel /> : null}
+        {active === 'subscriptionLogs' ? <SubscriptionPanel /> : null}
       </main>
     </div>
   );

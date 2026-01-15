@@ -61,6 +61,7 @@ router.post('/register', async (req, res, next) => {
       role: 'user',
       wallet: 0,
       enabled: false,
+      payment_information: { card_id: null, cardHash: null, last4: null, expiryDate: null, enabled: null,},
       subscription: { status: 'inactive', nextBillingDate: null, monthlyFee: 0 },
       passwordSalt: salt,
       passwordHash,

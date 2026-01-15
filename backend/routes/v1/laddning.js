@@ -1,63 +1,96 @@
 import express from 'express';
-import laddnings_station from '../../models/laddnings-stationer.js';
 import { getDb } from '../../database.js';
 import { authenticate } from '../../middleware/utils.js';
 import requireAdmin from '../../middleware/admin.js';
+import { ObjectId } from 'mongodb';
+
 
 const router = express.Router();
 
 router.use(authenticate);
 router.use(requireAdmin);
 
-
 // GET all charging stations
-router.get('/', async (req, res) => {
-    const data = await laddnings_station.getAll();
-    res.status(200).json(data);
-});
-
-
-
-router.post('/add', async (req, res) => {
-    console.log(req.body)
+router.get('/stations', async (req, res) => {
     try {
-        const result = await laddnings_station.addOne(req.body);
-        res.status(201).json(result);
-    } catch (err) {
-        res.status(400).json({ error: err.message });
+        const db = getDb();
+        if (!db) return res.json([]);
+
+        const docs = await db.collection('laddningStation').find({}).toArray();
+        console.log(docs, "ttttttt")
+        res.json(docs);
+    } catch (e) {
+        next(e);
     }
 });
 
 
 
-router.post("/update", async (req, res) => {
-    const update = await laddnings_station.update(req.body);
-    console.log("Updating document:", req.body.id);
-    console.log("Allowed users:", req.body.allowed_users);
-
-    return res.status(201).json({ update });
-
-});
-
-
-router.get('/hierarchy', async (req, res) => {
+router.post('/scooter/:scooterId/charge', async (req, res, next) => {
+    console.log("hej532444444444")
     try {
-        const data = await laddnings_station.getHierarchy();
-        res.status(200).json(data);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
+        const { station } = req.body;
+        const scooterId = req.params.scooterId;
+
+        const db = getDb();
+        if (!db) return res.status(500).json({ error: 'DB not connected' });
+
+        // Update bike location
+        let test = await db.collection('scooters').updateOne(
+            { id: scooterId },
+            { $set: { status: 'Charging' } }
+        );
+
+        console.log(test, "-------------------------------------------\n\n", station)
+
+        // Add bike to spot
+        let chawo = await db.collection('laddningStation').updateOne(
+            { _id: new ObjectId(station) },
+            { $addToSet: { elsparkcyklar: scooterId } }
+        );
+
+        console.log(chawo, "-------------------------------------------")
+
+        res.json({ message: 'Bike parked successfully', station });
+    } catch (e) {
+        next(e);
     }
 });
 
 
 
 
-router.get('/:id', async (req, res) => {
-    const id = req.params.id;
-    const doc = await laddnings_station.getOne(id);
+// Remove a bike from charge station
+router.post('/scooter/:scooterId/uncharge', async (req, res, next) => {
+    try {
+        const { station } = req.body; 
+        const scooterId = req.params.scooterId;
 
-    return res.json({ doc });
+        const db = getDb();
+        if (!db) return res.status(500).json({ error: 'DB not connected' });
+
+        await db.collection('scooters').updateOne(
+            { id: scooterId },
+            { $set: { status: 'Available' } }
+        );
+
+        //Remove from charge station
+        await db.collection('laddningStation').updateOne(
+            { _id: new ObjectId(station) },
+            { $pull: { elsparkcyklar: scooterId } }
+        );
+
+        res.json({ message: 'Bike removed from station successfully', station });
+    } catch (e) {
+        next(e);
+    }
 });
+
+
+
+
+
+
 
 router.get('/stations', async (_req, res) => {
   try {

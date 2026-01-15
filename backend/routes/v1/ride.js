@@ -22,6 +22,33 @@ router.post('/ride/start/:scooterId', authenticate, async (req, res, next) => {
       if (r.userId === req.user.id && r.status === 'active') return res.status(409).json({ message: 'Already riding' });
     }
 
+    const subscriptionDoc = await db.collection('users').findOne(
+      { _id: req.user._id },
+      { projection: { subscription: 1 } }
+    );
+
+    const subscription = subscriptionDoc?.subscription ?? null;
+
+    if (!subscription || (subscription.status !== 'active' && subscription.status !== 'stopping')) {
+      //Kollar ifall man har negativt i plånbok (går inte hyra cykel då)
+      const user = await db.collection('users').findOne(
+        { _id: req.user._id },
+        { projection: { wallet: 1 } }
+      );
+
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      const wallet = user.wallet ?? 0;
+
+      if (wallet < 0) {
+        return res.status(402).json({
+          message: 'Need positive balance to hire scooter!'
+        });
+      }
+    }
+
+
     await db.collection('scooters').updateOne({ id: scooterId }, { $set: { status: 'InUse', updatedAt: new Date() } });
 
     const rideId = `ride_${crypto.randomUUID()}`;
@@ -85,7 +112,23 @@ router.post('/ride/end/:rideId', authenticate, async (req, res, next) => {
 
     await db.collection('scooters').updateOne({ id: ride.scooterId }, { $set: { status: 'Available', updatedAt: new Date() } });
 
-    const due = Number(ride.price ?? 0);
+    await db.collection('scooters').updateOne({ id: ride.scooterId }, { $set: { status: 'Available', updatedAt: new Date() } });
+
+    let due;
+    //Kollar ifall subscription så det inte kostar om man har subscription
+    const subscriptionDoc = await db.collection('users').findOne(
+      { _id: req.user._id },
+      { projection: { subscription: 1 } }
+    );
+
+    const subscription = subscriptionDoc?.subscription ?? null;
+
+    if (!subscription || (subscription.status !== 'active' && subscription.status !== 'stopping')) {
+      //Kollar ifall vi har plånbok
+        due = Number(ride.price ?? 0);
+    } else {
+        due = 0
+    }
 
     const upd = await db.collection('users').findOneAndUpdate(
       { id: ride.userId },

@@ -64,6 +64,7 @@ function normalizeProfile(raw: any) {
 
 export const fetchProfile = async () => {
   const token = localStorage.getItem('token');
+  console.log(token, "token")
 
   try {
     const response = await api.get('/user/profile', {
@@ -131,6 +132,7 @@ export const updatePaymentInfo = async (paymentData: {
     cvv?: string;
 }) => {
 
+    let token = localStorage.getItem("token");
     try {
         const response = await api.put(
                 '/user/payment', 
@@ -138,7 +140,7 @@ export const updatePaymentInfo = async (paymentData: {
             {
             headers: {
                 'Content-Type': 'application/json',
-                ...tokenHeader(),
+                'x-access-token': token,
             }
         });
 
@@ -200,7 +202,7 @@ export const reactivateSubscription = async () => {
     const token = localStorage.getItem("token");
 
     try {
-        const response = await api.put(
+        const response = await api.post(
             '/user/subscription/reactivate',
             {},
             {
@@ -210,6 +212,7 @@ export const reactivateSubscription = async () => {
                 }
             }
         );
+        console.log(response.data, "-------------------------------------------")
         return response.data;
     } catch (error) {
         throw new Error('Error reactivating subscription: ' + toMessage(error));

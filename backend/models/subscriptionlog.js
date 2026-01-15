@@ -28,6 +28,7 @@ export async function getSubscriptionLog(id) {
 export async function addSubscriptionLog({
     user_id,
     card_id = null,
+    email = null,
     amount,
     date = new Date(),
     type,
@@ -37,6 +38,7 @@ export async function addSubscriptionLog({
     const doc = {
         user_id,
         card_id,
+        email,
         amount,
         date,
         type,
@@ -51,6 +53,7 @@ export async function updateSubscriptionLog({
     id,
     user_id,
     card_id,
+    email,
     amount,
     date,
     type
@@ -61,6 +64,7 @@ export async function updateSubscriptionLog({
         $set: {
             ...(user_id && { user_id }),
             ...(card_id && { card_id }),
+            ...(email && { email }),
             ...(amount !== undefined && { amount }),
             ...(date && { date }),
             ...(type && { type })

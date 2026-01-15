@@ -1,5 +1,30 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import type { User } from '../types';
+
+const toMessage = (error: unknown) => (error instanceof Error ? error.message : String(error));
+
+type AuthResponse = { token: string; user: User };
+
+const storeAuth = (data: AuthResponse) => {
+    localStorage.setItem('token', data.token);
+
+    const decoded = decodeJwtPayload(data.token) ?? {};
+    console.log(decoded, "decode-----------------------------------------------")
+    const role = data.user?.role ?? decoded.role ?? decoded.roll; // prefer backend user.role
+
+    // Store a real user object (JSON), not just JWT payload.
+    // Keeps compatibility with ProtectedRoute/Navbar which reads user.role.
+    localStorage.setItem(
+        'user',
+        JSON.stringify({
+            ...decoded,       // optional extra claims
+            ...data.user,     // authoritative user fields from backend
+            role,             // normalized role
+        })
+    );
+};
+
 
 function decodeJwtPayload(token: string): any {
   try {
@@ -26,12 +51,16 @@ const OAuthSuccess = () => {
       return;
     }
 
+    //storeAuth(data);
     localStorage.setItem('token', token);
-
     const decoded = decodeJwtPayload(token) ?? {};
+
+    console.log(decoded, "dekod")
     const role = decoded.role ?? decoded.roll ?? 'user';
 
     localStorage.setItem('user', JSON.stringify({ ...decoded, role }));
+
+    console.log(localStorage.getItem('user'), "test")
 
     navigate(role === 'admin' ? '/admin' : '/', { replace: true });
   }, [navigate]);

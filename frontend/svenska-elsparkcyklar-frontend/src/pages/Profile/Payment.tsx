@@ -4,14 +4,14 @@ import './Payment.css';
 
 type PaymentInfo = {
     cardNumber: string;
-    exp_date: string;
+    expiryDate: string;
     cvv: string;
 };
 
 const Payment = () => {
     const [paymentInfo, setPaymentInfo] = useState<PaymentInfo>({
         cardNumber: '',
-        exp_date: '',
+        expiryDate: '',
         cvv: '',
     });
     const [loading, setLoading] = useState(false);
@@ -30,12 +30,13 @@ const Payment = () => {
         try {
             await updatePaymentInfo({
                 cardNumber: paymentInfo.cardNumber,
-                expiryDate: paymentInfo.exp_date,
+                expiryDate: paymentInfo.expiryDate,
                 cvv: paymentInfo.cvv,
             });
+            console.log("hjesan")
             alert('Payment information updated successfully!');
             // Optionally clear the form
-            setPaymentInfo({ cardNumber: '', exp_date: '', cvv: '' });
+            setPaymentInfo({ cardNumber: '', expiryDate: '', cvv: '' });
         } catch {
             setError('Failed to update payment information.');
         } finally {
@@ -50,7 +51,7 @@ const Payment = () => {
 
             <form className="payment-form" onSubmit={handleSubmit}>
                 <label>
-                    Card Number:
+                    Card Number4:
                     <input
                         type="text"
                         name="cardNumber"
@@ -66,8 +67,8 @@ const Payment = () => {
                     Expiry Date:
                     <input
                         type="text"
-                        name="exp_date"
-                        value={paymentInfo.exp_date}
+                        name="expiryDate"
+                        value={paymentInfo.expiryDate}
                         onChange={handleChange}
                         placeholder="MM/YY"
                         maxLength={5}

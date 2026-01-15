@@ -9,12 +9,12 @@ const router = express.Router();
 router.use(checkToken);
 
 // GET all cities
-router.get('/', async (req, res) => {
+router.get('/cities', async (req, res) => {
     const data = await städer.getAll();
     res.status(200).json(data);
 });
 
-router.get('/:id', async (req, res) => {
+router.get('/cities/:id', async (req, res) => {
     const id = req.params.id;
     const doc = await städer.getOne(id);
 

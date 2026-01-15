@@ -22,6 +22,7 @@ function dbNameFromUri(uri) {
 export async function connectDb() {
   if (_db) return _db;
 
+  //Ändrade till för köra npm start (MONGODB_URL)
   const uri = process.env.DATABASE_URL || process.env.MONGODB_URI;
   if (!uri) throw new Error('DATABASE_URL is not configured');
 
@@ -33,6 +34,23 @@ export async function connectDb() {
 
   return _db;
 }
+
+//För att köra tester
+export async function connectDbTest() {
+  if (_db) return _db;
+
+  const uri = process.env.MONGODB_URL_TEST;
+  if (!uri) throw new Error('Missing MongoDB URI (set MONGODB_URI or MONGODB_URL).');
+
+  _client = new MongoClient(uri);
+  await _client.connect();
+
+  const dbName = process.env.MONGODB_DB_TEST || undefined;
+  _db = dbName ? _client.db(dbName) : _client.db();
+
+  return _db;
+}
+
 
 export function getDb() {
   if (!_db) {

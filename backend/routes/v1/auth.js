@@ -1,28 +1,42 @@
 import express from "express";
-import { getDb } from '../../database.js';
+import passport from "../../middleware/passport.js"; 
 import { signToken } from '../../middleware/signtoken.js';
+import { getDb } from '../../database.js';
+
+
 
 const router = express.Router();
 
-router.get('/auth/google', async (_req, res, next) => {
-  try {
+router.get("/google", (req, res, next) => {
+  console.log("✅ Hit /google route!");
+  next();
+}, passport.authenticate("google", { scope: ["profile", "email"] }));
+
+
+
+router.get(
+  "/google/callback",
+  passport.authenticate("google", { session: false }),
+  async (req, res) => {
     const db = getDb();
-    if (!db) return res.status(500).json({ message: 'Database not configured' });
 
-    // dev shortcut: log in as admin
-    const admin = await db.collection('users').findOne({ id: 'u_admin' });
-    if (!admin) return res.status(500).json({ message: 'Admin user missing' });
+    console.log(req.user, "payload");
 
-    const token = signToken(admin);
-    res.redirect(`http://localhost:5173/oauth-success?token=${encodeURIComponent(token)}`);
-  } catch (e) {
-    next(e);
+    const users = db.collection('users');
+
+    const user = await users.findOne({ email: String(req.user.email) });
+
+    console.log(user, "----------------------------")
+
+    const token = signToken(user);
+
+    console.log(token, "tokn")
+
+    res.redirect(
+      `http://localhost:5173/oauth-success?token=${encodeURIComponent(token)}`
+    );
   }
-});
+);
 
-router.post('/auth/logout', (_req, res) => res.json({ ok: true }));
-
-// Routes under /v1/auth/*
-router.post("/logout", (_req, res) => res.json({ ok: true }));
 
 export default router;
