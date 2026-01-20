@@ -1,7 +1,7 @@
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { getDb, makeSalt, hashPassword, verifyPassword } from '../database.js';
-
+import { getJwtSecret } from './utils.js';
 
 passport.use(new GoogleStrategy(
     {

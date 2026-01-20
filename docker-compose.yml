@@ -20,6 +20,9 @@ services:
       - DATABASE_URL=mongodb://mongo:27017/elsparkcyklar
       - SEED_SCOOTERS=0
       - PORT=3000
+      - JWT_SECRET=mtMI8T3vpt2Az95FJgprIh0FIydN2VTUBKw4ZOlSZHxCJEobpMqWSaDXbWqQq3QH
+      - GOOGLE_CLIENT_ID=759660775784-ue5e9ir3u7pkebomrmk32353dhqppthr.apps.googleusercontent.com
+      - GOOGLE_CLIENT_SECRET=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
     # -------------------------------
     ports:
       - "3000:3000"

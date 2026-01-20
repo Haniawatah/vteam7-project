@@ -30,6 +30,7 @@ export async function authenticate(req, res, next) {
 
     const userId = decoded.sub || decoded.id;
     const user = await db.collection('users').findOne({ id: userId });
+
     if (!user) return res.status(401).json({ message: 'Invalid token' });
 
     req.user = user;

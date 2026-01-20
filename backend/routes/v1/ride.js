@@ -49,13 +49,6 @@ router.post('/ride/start/:scooterId', authenticate, async (req, res, next) => {
         }
         }
 
-        //Där vi fixar scooter "zone" delarna, alltså tar bort den från zoner
-
-        const scooterLocations = [scooter.location.lng, scooter.location.lat];
-
-        console.log(scooterLocations, "daw-------------------------", scooter.city)
-
-
         //Checkar staden för sparkcykeln.
         const city = await db.collection('city').findOne({ namn: scooter.city });
         if (!city) return res.status(404).json({ message: 'City not found' });
@@ -164,12 +157,12 @@ router.post('/ride/end/:rideId', authenticate, async (req, res, next) => {
                 message: `Scooter ${ride.scooterId} not found`
             });
         }
-        console.log('Found scooter:', scooter);
+
         //Fixar våran stad och X och Y
         const scooterCity = scooter.city;
         const scooterX = scooter.location.lat;
         const scooterY = scooter.location.lng;
-        console.log("city: ", scooterCity, "scooterX: ", scooterX, "scooterY: ", scooterY)
+
 
         const city = await db.collection('city').findOne({ namn: scooter.city });
 
@@ -179,7 +172,6 @@ router.post('/ride/end/:rideId', authenticate, async (req, res, next) => {
         //Gör bara så alla stationer för staden läggs i samma ställe
         const allaStationer = [...laddStation, ...parkeringStation];
 
-        console.log("alle stationer:", allaStationer)
 
 
         let stationFound = null;
@@ -190,8 +182,6 @@ router.post('/ride/end/:rideId', authenticate, async (req, res, next) => {
                 break;
             }
         }
-
-        console.log(stationFound, "-------------------")
 
 
         if (stationFound) {
@@ -214,7 +204,6 @@ router.post('/ride/end/:rideId', authenticate, async (req, res, next) => {
 
             //Ger rabatt ifall man parkerar i en station
             //Gör bara så den avrundar till hel nummer för att göra det lättare
-            console.log("hwadawjs")
             ride.price =  Math.round(ride.price * 0.75);
         }
 

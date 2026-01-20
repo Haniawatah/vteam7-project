@@ -567,7 +567,7 @@ export async function makingChargingStations() {
 
 
 
-
+// DEN MÅSTE FIXAS , (DEN FUNKADE FÖRUT MEN DEN MÅSTE VARA VID SIMULATION TROR JAG------------)
 
 export async function autoScooterStation() {
   const db = getDb();
@@ -625,10 +625,12 @@ export async function autoScooterStation() {
 
 
 
+
 // Start-seed: admin + scooters + ev. migrering
 export async function seedBootstrap() {
   await ensureAdminUser();
   await migrateScootersToCanonicalSchema();
+
 
   //Städer
   await makingCities();
@@ -637,11 +639,14 @@ export async function seedBootstrap() {
   await makingParkingStation();
   await makingChargingStations();
 
-  //Sorterar så cyklarna som är i en station hamnar där (när de startas, annars hanterar routsen det när man parkerar)
-  await autoScooterStation();
 
   // IMPORTANT: do NOT auto-seed scooters unless SEED_SCOOTERS > 0 (or ensureScooters called with >0)
   await ensureScooters(0);
+
+  //DEN MÅSTE FIXAS---------------------------------------
+  //Sorterar så cyklarna som är i en station hamnar där (när de startas, annars hanterar routsen det när man parkerar)
+  //await autoScooterStation();
+
 }
 
 // Simulering: flytta scooter + dra batteri för aktiva rides

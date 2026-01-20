@@ -10,6 +10,7 @@
  * No changes to payment/auth flows in the app—this is a standalone script.
  */
 
+
 const env = process.env;
 
 const SIM_API_URL = env.SIM_API_URL ?? 'http://localhost:3000/v1';
@@ -21,8 +22,8 @@ const SIM_TICK_MS = num(env.SIM_TICK_MS, 1500);
 const SIM_LOG_EVERY_MS = num(env.SIM_LOG_EVERY_MS, 5000);
 const SIM_USER_PASSWORD = env.SIM_USER_PASSWORD ?? 'Passw0rd!';
 
-const SIM_ADMIN_EMAIL = env.SIM_ADMIN_EMAIL ?? '';
-const SIM_ADMIN_PASSWORD = env.SIM_ADMIN_PASSWORD ?? '';
+const SIM_ADMIN_EMAIL = env.SIM_ADMIN_EMAIL ?? 'Hani@gmail.com';
+const SIM_ADMIN_PASSWORD = env.SIM_ADMIN_PASSWORD ?? '123';
 
 function num(v, fallback) {
   const n = Number(v);
@@ -46,7 +47,21 @@ async function http(method, path, { token, body, timeoutMs = 10_000, okStatuses 
       signal: ac.signal,
     });
 
+    //Tester för när vi hade problem med hur cyklarnas skapades
+    //if (method === 'POST' && path === '/scooters') {
+      //let responseBody;
+      //try {
+        //responseBody = await res.json(); // parse JSON body
+      //} catch {
+        //responseBody = await res.text(); // fallback if not JSON
+      //}
+      //console.log('[SIM][DEBUG] POST /scooters response:', res.status, responseBody);
+    //}
+
     const text = await res.text();
+
+    //console.log(res, "---------------RES----------------w dwadawdadwadaw daw dadw")
+
     const data = text ? safeJson(text) : null;
 
     const allowed = okStatuses ?? [200, 201, 204];
@@ -125,6 +140,7 @@ async function ensureAdminToken() {
   if (!SIM_ADMIN_EMAIL || !SIM_ADMIN_PASSWORD) return '';
   try {
     const res = await apiLogin(SIM_ADMIN_EMAIL, SIM_ADMIN_PASSWORD);
+    console.log(res, "_----------------------------------------------------------------------------------------")
     adminToken = res?.token ?? res?.data?.token ?? '';
     return adminToken;
   } catch {
@@ -247,6 +263,8 @@ async function ensureScooters() {
     return { lat: center.lat + dLat, lng: center.lng + dLng };
   }
 
+  console.log("[SIM]---------------------------------------------: ", adminToken)
+
   const creates = Array.from({ length: missing }, (_, i) =>
     limit(async () => {
       // n is 1-based scooter number for stable "SCOOT-0001.."
@@ -334,6 +352,8 @@ async function endSomeRides() {
   await Promise.all(ends);
 }
 
+
+
 async function main() {
   console.log(`[sim] api=${SIM_API_URL} users=${SIM_USERS} scooters=${SIM_SCOOTERS} activeTarget=${SIM_ACTIVE_TARGET} conc=${SIM_CONCURRENCY}`);
   await waitForBackend();
@@ -341,6 +361,8 @@ async function main() {
   await ensureAdminToken();
   await ensureUsers();
   await ensureScooters();
+
+
 
   let lastLog = 0;
   let stop = false;

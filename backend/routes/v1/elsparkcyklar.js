@@ -1,6 +1,6 @@
 import express from 'express';
 import { getDb } from '../../database.js';
-import { authenticate } from '../../middleware/passport.js';
+import { authenticate } from '../../middleware/utils.js';
 import { requireAdmin } from '../../middleware/admin.js';
 
 const router = express.Router();
@@ -61,6 +61,8 @@ router.get('/scooters/available', async (req, res) => {
 
 // ADMIN: create scooter (used by simulator when admin creds exist)
 router.post('/scooters', authenticate, requireAdmin, async (req, res) => {
+
+  console.log("Route hit")
   try {
     const db = getDb();
     const col = db.collection('scooters');
