@@ -1,5 +1,7 @@
 import crypto from 'crypto';
-import { MongoClient } from 'mongodb';
+import { MongoClient, ObjectId } from 'mongodb';
+import { inStationZone } from './middleware/inZone.js';
+
 
 let _client;
 let _db;
@@ -22,7 +24,7 @@ function dbNameFromUri(uri) {
 export async function connectDb() {
   if (_db) return _db;
 
-  //Ändrade till för köra npm start (MONGODB_URL)
+  //Ändrade till för köra npm start (MONGODB_URL), annars DATABASE_URL
   const uri = process.env.DATABASE_URL || process.env.MONGODB_URI;
   if (!uri) throw new Error('DATABASE_URL is not configured');
 
@@ -233,10 +235,410 @@ export async function ensureAdminUser() {
   return { ok: true };
 }
 
+
+
+
+
+//Skapar Städer och stationer
+
+export async function makingCities() {
+  const db = getDb();
+  if (!db) return { ok: false, reason: 'Databas inte kopplad' };
+
+  const col = db.collection('city');
+
+  //Undviker dubbletter
+  await col.createIndex({ namn: 1 }, { unique: true });
+
+  const cities = [
+    {
+      namn: 'Stockholm',
+      position: '59.3293, 18.0686',
+    },
+    {
+      namn: 'Göteborg',
+      position: '57.7089, 11.9746',
+    },
+    {
+      namn: 'Malmö',
+      position: '55.6050, 13.0038',
+    },
+  ];
+
+  for (const city of cities) {
+    await col.updateOne(
+      { namn: city.namn },
+      {
+        $set: city,
+      },
+      { upsert: true }
+    );
+  }
+
+  return { ok: true };
+}
+
+
+
+
+
+
+export async function makingParkingStation() {
+  const db = getDb();
+  const col = db.collection('parkeringStation');
+
+  //Hämtar städer för att ge deras id till stationerna
+  const city = db.collection('city');
+
+  // Hämta alla städer
+  const stockholm = await city.findOne({ namn: 'Stockholm' });
+  const göteborg = await city.findOne({ namn: 'Göteborg' });
+  const malmö = await city.findOne({ namn: 'Malmö' });
+
+
+const stations = [
+    // Stockholm
+    {
+      _id: new ObjectId(),
+      name: 'Stockholm Parking North',
+      stad_id: stockholm._id,
+      zone: {
+        position_1: [59.33, 18.06],
+        position_2: [59.33, 18.065],
+        position_3: [59.335, 18.065],
+        position_4: [59.335, 18.06],
+      },
+      elsparkcyklar: [],
+    },
+    {
+      _id: new ObjectId(),
+      name: 'Stockholm Parking East',
+      stad_id: stockholm._id,
+      zone: {
+        position_1: [59.33, 18.07],
+        position_2: [59.33, 18.075],
+        position_3: [59.335, 18.075],
+        position_4: [59.335, 18.07],
+      },
+      elsparkcyklar: [],
+    },
+    {
+      _id: new ObjectId(),
+      name: 'Stockholm Parking South',
+      stad_id: stockholm._id,
+      zone: {
+        position_1: [59.315, 18.07],
+        position_2: [59.315, 18.075],
+        position_3: [59.32, 18.075],
+        position_4: [59.32, 18.07],
+      },
+      elsparkcyklar: [],
+    },
+    {
+      _id: new ObjectId(),
+      name: 'Stockholm Parking West',
+      stad_id: stockholm._id,
+      zone: {
+        position_1: [59.315, 18.06],
+        position_2: [59.315, 18.065],
+        position_3: [59.32, 18.065],
+        position_4: [59.32, 18.06],
+      },
+      elsparkcyklar: [],
+    },
+
+    // Göteborg
+    {
+      _id: new ObjectId(),
+      name: 'Göteborg Parking North',
+      stad_id: göteborg._id,
+      zone: {
+        position_1: [57.71, 11.95],
+        position_2: [57.71, 11.955],
+        position_3: [57.715, 11.955],
+        position_4: [57.715, 11.95],
+      },
+      elsparkcyklar: [],
+    },
+    {
+      _id: new ObjectId(),
+      name: 'Göteborg Parking East',
+      stad_id: göteborg._id,
+      zone: {
+        position_1: [57.71, 11.96],
+        position_2: [57.71, 11.965],
+        position_3: [57.715, 11.965],
+        position_4: [57.715, 11.96],
+      },
+      elsparkcyklar: [],
+    },
+    {
+      _id: new ObjectId(),
+      name: 'Göteborg Parking South',
+      stad_id: göteborg._id,
+      zone: {
+        position_1: [57.705, 11.96],
+        position_2: [57.705, 11.965],
+        position_3: [57.71, 11.965],
+        position_4: [57.71, 11.96],
+      },
+      elsparkcyklar: [],
+    },
+    {
+      _id: new ObjectId(),
+      name: 'Göteborg Parking West',
+      stad_id: göteborg._id,
+      zone: {
+        position_1: [57.705, 11.95],
+        position_2: [57.705, 11.955],
+        position_3: [57.71, 11.955],
+        position_4: [57.71, 11.95],
+      },
+      elsparkcyklar: [],
+    },
+
+    // Malmö
+    {
+      _id: new ObjectId(),
+      name: 'Malmö Parking North',
+      stad_id: malmö._id,
+      zone: {
+        position_1: [55.605, 13.0],
+        position_2: [55.605, 13.005],
+        position_3: [55.61, 13.005],
+        position_4: [55.61, 13.0],
+      },
+      elsparkcyklar: [],
+    },
+    {
+      _id: new ObjectId(),
+      name: 'Malmö Parking East',
+      stad_id: malmö._id,
+      zone: {
+        position_1: [55.605, 13.005],
+        position_2: [55.605, 13.01],
+        position_3: [55.61, 13.01],
+        position_4: [55.61, 13.005],
+      },
+      elsparkcyklar: [],
+    },
+    {
+      _id: new ObjectId(),
+      name: 'Malmö Parking South',
+      stad_id: malmö._id,
+      zone: {
+        position_1: [55.6, 13.0],
+        position_2: [55.6, 13.005],
+        position_3: [55.605, 13.005],
+        position_4: [55.605, 13.0],
+      },
+      elsparkcyklar: [],
+    },
+    {
+      _id: new ObjectId(),
+      name: 'Malmö Parking West',
+      stad_id: malmö._id,
+      zone: {
+        position_1: [55.6, 12.995],
+        position_2: [55.6, 13.0],
+        position_3: [55.605, 13.0],
+        position_4: [55.605, 12.995],
+      },
+      elsparkcyklar: [],
+    },
+  ];
+
+  for (const station of stations) {
+    await col.updateOne(
+      { name: station.name, stad_id: station.stad_id },
+      { $setOnInsert: station },
+      { upsert: true }
+    );
+  }
+
+  return { ok: true, count: stations.length };
+}
+
+
+//Laddnings Stationer skapas
+
+export async function makingChargingStations() {
+  const db = getDb();
+  const col = db.collection('laddningStation');
+
+  //Hämtar städer för att ge id
+  const city = db.collection('city');
+
+  // Hämta alla städer
+  const stockholm = await city.findOne({ namn: 'Stockholm' });
+  const göteborg = await city.findOne({ namn: 'Göteborg' });
+  const malmö = await city.findOne({ namn: 'Malmö' });
+
+  const stations = [
+    //Stockholm laddning station
+    {
+      _id: new ObjectId(),
+      name: 'Stockholm Charging North',
+      stad_id: stockholm._id,
+      zone: {
+        position_1: [59.34, 18.06],
+        position_2: [59.34, 18.065],
+        position_3: [59.345, 18.065],
+        position_4: [59.345, 18.06],
+      },
+      elsparkcyklar: [],
+    },
+    {
+      _id: new ObjectId(),
+      name: 'Stockholm Charging South',
+      stad_id: stockholm._id,
+      zone: {
+        position_1: [59.31, 18.06],
+        position_2: [59.31, 18.065],
+        position_3: [59.315, 18.065],
+        position_4: [59.315, 18.06],
+      },
+      elsparkcyklar: [],
+    },
+
+    //Göteborg laddning station
+    {
+      _id: new ObjectId(),
+      name: 'Göteborg Charging North',
+      stad_id: göteborg._id,
+      zone: {
+        position_1: [57.72, 11.95],
+        position_2: [57.72, 11.955],
+        position_3: [57.725, 11.955],
+        position_4: [57.725, 11.95],
+      },
+      elsparkcyklar: [],
+    },
+    {
+      _id: new ObjectId(),
+      name: 'Göteborg Charging South',
+      stad_id: göteborg._id,
+      zone: {
+        position_1: [57.705, 11.95],
+        position_2: [57.705, 11.955],
+        position_3: [57.71, 11.955],
+        position_4: [57.71, 11.95],
+      },
+      elsparkcyklar: [],
+    },
+
+    //Malmö laddning station
+    {
+      _id: new ObjectId(),
+      name: 'Malmö Charging North',
+      stad_id: malmö._id,
+      zone: {
+        position_1: [55.61, 13.0],
+        position_2: [55.61, 13.005],
+        position_3: [55.615, 13.005],
+        position_4: [55.615, 13.0],
+      },
+      elsparkcyklar: [],
+    },
+    {
+      _id: new ObjectId(),
+      name: 'Malmö Charging South',
+      stad_id: malmö._id,
+      zone: {
+        position_1: [55.595, 13.0],
+        position_2: [55.595, 13.005],
+        position_3: [55.6, 13.005],
+        position_4: [55.6, 13.0],
+      },
+      elsparkcyklar: [],
+    },
+  ];
+
+  for (const station of stations) {
+    await col.updateOne(
+      { name: station.name, stad_id: station.stad_id },
+      { $setOnInsert: station },
+      { upsert: true }
+    );
+  }
+
+  return { ok: true, count: stations.length };
+}
+
+
+
+
+
+export async function autoScooterStation() {
+  const db = getDb();
+  const scooters = await db.collection('scooters').find({}).toArray();
+  const cities = await db.collection('city').find({}).toArray();
+
+  for (const city of cities) {
+    // Hämta alla stationer i staden
+    const laddStation = await db.collection('laddningStation').find({ stad_id: city._id }).toArray();
+    const parkeringStation = await db.collection('parkeringStation').find({ stad_id: city._id }).toArray();
+    const allaStationer = [...laddStation, ...parkeringStation];
+
+    // Loop över alla scooters i staden
+    const cityScooters = scooters.filter(s => s.city === city.namn);
+
+    for (const scooter of cityScooters) {
+      const scooterX = scooter.location.lat;
+      const scooterY = scooter.location.lng;
+
+      let stationFound = null;
+      for (const station of allaStationer) {
+        if (inStationZone(scooterX, scooterY, station.zone)) {
+          stationFound = station;
+          break;
+        }
+      }
+
+      if (stationFound) {
+        let collectionName;
+
+        //Kollar vilken station det är, för att veta vilken collection ska användas
+        //Gör även allt lowercase för att det ska bli mer säkert (alltså inte bokstav storlek skapar problem)
+        if (stationFound.name.toLowerCase().includes('charging')) {
+            collectionName = 'laddningStation';
+        } else if (stationFound.name.toLowerCase().includes('parking')){
+            collectionName = 'parkeringStation';
+        } else {
+          console.log("Error with station name (unlikely)");
+        }
+
+        await db.collection(collectionName).updateOne(
+          { _id: stationFound._id },
+          { $addToSet: { elsparkcyklar: scooter.id } }
+        );
+      }
+    }
+  }
+
+  return { ok: true };
+}
+
+
+
+
+
+
+
 // Start-seed: admin + scooters + ev. migrering
 export async function seedBootstrap() {
   await ensureAdminUser();
   await migrateScootersToCanonicalSchema();
+
+  //Städer
+  await makingCities();
+
+  //Stationer,
+  await makingParkingStation();
+  await makingChargingStations();
+
+  //Sorterar så cyklarna som är i en station hamnar där (när de startas, annars hanterar routsen det när man parkerar)
+  await autoScooterStation();
 
   // IMPORTANT: do NOT auto-seed scooters unless SEED_SCOOTERS > 0 (or ensureScooters called with >0)
   await ensureScooters(0);

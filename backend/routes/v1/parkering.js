@@ -41,7 +41,7 @@ router.post('/scooter/:scooterId/park', checkAdmin , async (req, res, next) => {
         // Update bike location
         let test = await db.collection('scooters').updateOne(
             { id: scooterId },
-            { $set: { status: 'parked' } }
+            { $set: { status: 'Available' } }
         );
 
         console.log(test, "-------------------------------------------")

@@ -115,14 +115,10 @@ const StationsPanel: React.FC = () => {
                 {expandedStations.has(s.id) &&
                   s.elsparkcyklar.map((scooterId) => (
                     <tr key={scooterId} style={{ background: '#f9f9f9' }}>
-                      {/* Empty cells to align under station row */}
                       <td>{scooterId}</td>
                       <td></td>
-
-                      {/* Bike ID */}
                       <td></td>
 
-                      {/* Actions */}
                       <td style={{ textAlign: 'right' }}>
                         <button onClick={() => removeBike(scooterId, s.id)}>
                           Remove scooter

@@ -26,6 +26,10 @@ import ParkingScooter from '../pages/Admin/AddParking';
 
 import OAuthSuccess from '../services/oauth';
 
+
+import ScooterZonesMap from '../pages/ZoneMap';
+
+
 const AppRoutes = () => {
     return (
         <Routes>
@@ -34,6 +38,8 @@ const AppRoutes = () => {
                 <Route path="rent" element={<RentScooter />} />
                 <Route path="rent/active/:rideId" element={<ProtectedRoute><ActiveRide /></ProtectedRoute>} />
                 <Route path="rent/history" element={<ProtectedRoute><RideHistory /></ProtectedRoute>} />
+
+                <Route path="testmap" element={<ProtectedRoute><ScooterZonesMap /></ProtectedRoute>} />
 
                 <Route path="profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                 <Route path="profile/payment" element={<ProtectedRoute><Payment /></ProtectedRoute>} />

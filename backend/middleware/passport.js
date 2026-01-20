@@ -2,58 +2,57 @@ import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { getDb, makeSalt, hashPassword, verifyPassword } from '../database.js';
 
-if (process.env.NODE_ENV !== 'test' && process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
-  passport.use(new GoogleStrategy(
-      {
-          clientID: process.env.GOOGLE_CLIENT_ID,
-          clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-          callbackURL: "/v1/auth/google/callback",
-      },
-      async (accessToken, refreshToken, profile, done) => {
-          try {
-              //Get Db
-              const db = getDb();
-              if (!db) return res.status(500).json({ message: 'Database not configured' });
 
-              //Fixes the email
-              const email = profile.emails[0].value;
+passport.use(new GoogleStrategy(
+    {
+        clientID: process.env.GOOGLE_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        callbackURL: "/v1/auth/google/callback",
+    },
+    async (accessToken, refreshToken, profile, done) => {
+        try {
+            //Get Db
+            const db = getDb();
+            if (!db) return res.status(500).json({ message: 'Database not configured' });
 
-              //Fixes the database to users, and checks if a a user with that email exsists
-              const users = db.collection('users');
-              const account = await users.findOne({ email: String(email) });
+            //Fixes the email
+            const email = profile.emails[0].value;
 
-              //Fixes the password and name
-              const password = null
-              const name = profile.displayName
+            //Fixes the database to users, and checks if a a user with that email exsists
+            const users = db.collection('users');
+            const account = await users.findOne({ email: String(email) });
 
-              const salt = makeSalt();
-              const passwordHash = hashPassword(password, salt);
+            //Fixes the password and name
+            const password = null
+            const name = profile.displayName
 
-              if (!account) {
-                  const user = {
-                      id: `u_${crypto.randomUUID()}`,
-                      name: name || String(email).split('@')[0],
-                      email: String(email),
-                      role: 'user',
-                      wallet: 0,
-                      enabled: false,
-                      payment_information: { card_id: null, cardHash: null, last4: null, expiryDate: null, enabled: null,},
-                      subscription: { status: 'inactive', nextBillingDate: null, monthlyFee: 0 },
-                      passwordSalt: salt,
-                      passwordHash,
-                      createdAt: new Date(),
-                      updatedAt: new Date(),
-                  };
-                  await users.insertOne(user);
-              }
+            const salt = makeSalt();
+            const passwordHash = hashPassword(password, salt);
 
-          return done(null, account);
-          } catch (err) {
-          return done(err, null);
-          }
-      }
-      ));
-  }
+            if (!account) {
+                const user = {
+                    id: `u_${crypto.randomUUID()}`,
+                    name: name || String(email).split('@')[0],
+                    email: String(email),
+                    role: 'user',
+                    wallet: 0,
+                    enabled: false,
+                    payment_information: { card_id: null, cardHash: null, last4: null, expiryDate: null, enabled: null,},
+                    subscription: { status: 'inactive', nextBillingDate: null, monthlyFee: 0 },
+                    passwordSalt: salt,
+                    passwordHash,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                };
+                await users.insertOne(user);
+            }
+
+        return done(null, account);
+        } catch (err) {
+        return done(err, null);
+        }
+    }
+    ));
 
 
 function getToken(req) {

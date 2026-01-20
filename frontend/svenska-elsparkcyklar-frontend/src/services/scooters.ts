@@ -225,3 +225,38 @@ export const fetchScootersAvailable = async () => {
     }
 };
 
+
+
+
+// Get parking zones
+export const fetchParkingZone = async () => {
+    try {
+        const res = await api.get('/parking/stations', {
+            headers: {
+                'Content-Type': 'application/json',
+                ...tokenHeader(),
+            },
+        });
+        return res.data;
+    } catch (error) {
+        throw new Error('Error fetching scooters: ' + toMessage(error));
+    }
+};
+
+
+
+// Get parking zones
+export const fetchChargingZone = async () => {
+    try {
+        const res = await api.get('/charging/stations', {
+            headers: {
+                'Content-Type': 'application/json',
+                ...tokenHeader(),
+            },
+        });
+        return res.data;
+    } catch (error) {
+        throw new Error('Error fetching scooters: ' + toMessage(error));
+    }
+};
+
