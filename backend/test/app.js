@@ -1061,6 +1061,103 @@ describe.only('Failing a log in', () => {
 
 
 
+describe.only('POST /register and login', () => {
+    const email = `${Math.random().toString(10).substring(7)}@test.com`;
+    const name = `${Math.random().toString(5)}test`;
 
+    it('Should return a token', (done) => {
+        request(app)
+        .post('/v1/register')
+        .send({ email: email, password: 123, name: name })
+        .end((err, res) => {
+            if (err) return done(err);
+                token = res.body.token;
+                res.body.token.should.be.a('string');
+                res.should.have.status(200);
+                const { user } = res.body;
+                user.should.include({
+                    email: email,
+                    name: name
+                });
+            done();
+        });
+    });
+
+    it('Logging into the new account', (done) => {
+        request(app)
+        .post('/v1/login')
+        .send({ email: email, password: '123' })
+        .end((err, res) => {
+            if (err) return done(err);
+                secondToken = res.body.token;
+                res.body.token.should.be.a('string');
+                res.should.have.status(200);
+                const { user } = res.body;
+                user.should.include({
+                    email: email,
+                    name: name
+                });
+            done();
+        });
+    });
+
+
+
+
+
+    //Subscription stuff
+
+    it('Get subscription stuff', (done) => {
+        request(app)
+        .get('/v1/user/subscription')
+        .set("x-access-token", secondToken)
+        .end((err, res) => {
+            if (err) return done(err);
+                res.should.have.status(200);
+            done();
+        });
+    });
+
+
+    it('Start a subscription', (done) => {
+        request(app)
+        .post('/v1/user/subscription/start')
+        .set("x-access-token", secondToken)
+        .send({ amount: 50 })
+        .end((err, res) => {
+            if (err) return done(err);
+                res.should.have.status(200);
+            done();
+        });
+    });
+
+
+
+    it('Cancel our subscription', (done) => {
+        request(app)
+        .put('/v1/user/subscription/cancel')
+        .set("x-access-token", secondToken)
+        .send({ amount: 50 })
+        .end((err, res) => {
+            if (err) return done(err);
+                res.should.have.status(200);
+            done();
+        });
+    });
+
+
+    it('Re start our subscription', (done) => {
+        request(app)
+        .post('/v1/user/subscription/reactivate')
+        .set("x-access-token", secondToken)
+        .send({ amount: 50 })
+        .end((err, res) => {
+            if (err) return done(err);
+                res.should.have.status(200);
+            done();
+        });
+    });
+
+});
 
 
