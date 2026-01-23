@@ -61,7 +61,7 @@ before(async () => {
     //Test för saker som ??, så vi täcker fler branches
     await users.insertMany([
         { id: `test1_${runId}`, email: `2${runId}@test.com`, role: 'user', wallet: 10, name: 'tst1' },
-        { id: `test2_${runId}`, email: null, role: null, wallet: null, username: `test2_${runId}` },
+        { id: `test2_${runId}`, email: `5${runId}@test.se`, role: null, wallet: null, username: `test2_${runId}` },
         { id: `test3_${runId}`, email: `1${runId}@test.com`, wallet: 0 }
     ]);
 
