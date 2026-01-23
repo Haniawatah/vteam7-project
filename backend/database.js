@@ -47,8 +47,8 @@ export async function connectDbTest() {
     'mongodb+srv://tiae24_db_user:fBxO5eHEFZPe0Aqv@cluster0.5s8wzba.mongodb.net/vteam7_test?retryWrites=true&w=majority';
 
   _client = new MongoClient(uri, {
-    serverSelectionTimeoutMS: 25000,
-    connectTimeoutMS: 15000,
+    serverSelectionTimeoutMS: 35000,
+    connectTimeoutMS: 25000,
     monitorCommands: false,
   });
 
