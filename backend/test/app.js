@@ -4,7 +4,7 @@ import chaiHttp from "chai-http";
 import app from "../index.js";
 import * as chai from "chai";
 import { getDb, makeSalt, hashPassword, verifyPassword } from '../database.js';
-import { connectDb, connectDbTest } from '../database.js';
+import { closeDbTest, connectDbTest } from '../database.js';
 import { ObjectId } from 'mongodb';
 
 const should = chai.should();
@@ -78,6 +78,12 @@ before(async () => {
 
 
     const allUsers = await users.find({}).toArray();
+});
+
+
+
+after(async () => {
+    await closeDbTest();
 });
 
 

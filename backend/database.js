@@ -54,6 +54,15 @@ export async function connectDbTest() {
 }
 
 
+export async function closeDbTest() {
+  if (_client) {
+    await _client.close();
+    _client = null;
+    _db = null;
+    console.log('Closes db');
+  }
+}
+
 
 export function getDb() {
   if (!_db) {
