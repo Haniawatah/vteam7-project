@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Force '/v1' (your Vite proxy is configured for '/v1' -> backend:3000)
 const api = axios.create({
-  baseURL: '/v1',
+    baseURL: '/v1',
 });
 
 const getToken = () => localStorage.getItem('token') || '';

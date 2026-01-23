@@ -4,9 +4,8 @@ import ScooterZonesMap from '../components/Map/ZoneMap';
 const ScooterMapPage: React.FC = () => {
     return (
         <div>
-        <h1>Elsparkcyklar & Zones</h1>
-        <p>Green = Charging Stations, Blue = Parking Zones</p>
-        <ScooterZonesMap />
+        <h1>Elsparkcyklar and Stations</h1>
+            <ScooterZonesMap />
         </div>
     );
 };

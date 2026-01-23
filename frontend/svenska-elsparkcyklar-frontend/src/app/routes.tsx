@@ -43,7 +43,7 @@ const AppRoutes = () => {
 
                 <Route path="ride/history/:rideId" element={<ProtectedRoute><UserRideHistory /></ProtectedRoute>} />
 
-                <Route path="testmap" element={<ProtectedRoute><ScooterZonesMap /></ProtectedRoute>} />
+                <Route path="zones" element={<ProtectedRoute><ScooterZonesMap /></ProtectedRoute>} />
 
                 <Route path="profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                 <Route path="profile/payment" element={<ProtectedRoute><Payment /></ProtectedRoute>} />
