@@ -16,12 +16,16 @@ jobs:
         node-version: [18.x, 20.x, 22.x]
       max-parallel: 1
 
-    services:
+    services:                        # ✅ MUST be here, under the job
       mongo:
         image: mongo:6.0
         ports:
           - 27017:27017
-        options: --health-cmd "mongosh --eval 'db.runCommand({ ping: 1 })'" --health-interval 10s --health-timeout 5s --health-retries 5
+        options: >                  # ✅ Use > or | for multiline strings
+          --health-cmd "mongosh --eval 'db.runCommand({ ping: 1 })'" 
+          --health-interval 10s 
+          --health-timeout 5s 
+          --health-retries 5
 
     env:
       MONGODB_URL: ${{ secrets.MONGODB_URL }}
@@ -41,10 +45,20 @@ jobs:
           cd backend
           npm install
 
+      - name: Wait for MongoDB to be ready
+        run: |
+          for i in {1..30}; do
+            mongo --eval "db.adminCommand('ping')" && break
+            echo "Waiting for MongoDB..."
+            sleep 2
+          done
+        env:
+          PATH: /usr/bin:$PATH
+
       - name: Seed local test DB from Atlas
         run: |
           cd backend
-          node copy.js
+          node scripts/copyDb.js
         env:
           MONGODB_URL: ${{ secrets.MONGODB_URL }}
 
