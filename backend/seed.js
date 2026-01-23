@@ -1,7 +1,6 @@
 import 'dotenv/config';
 import crypto from 'crypto';
 import { MongoClient } from 'mongodb';
-import * as database from './database.js';
 
 const CENTER = { lat: 59.3293, lng: 18.0686 };
 const COUNT = 50;

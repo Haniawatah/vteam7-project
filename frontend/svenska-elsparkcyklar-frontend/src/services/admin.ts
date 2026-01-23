@@ -85,7 +85,7 @@ export async function fetchSubscriptionsAdmin() {
   const res = await api.get(`/logs/subs`, {
     headers: { 'Content-Type': 'application/json', ...tokenHeader() },
   });
-  console.log(res.data, "--------------")
+  console.log(res.data, "---------s-----")
   return res.data;
 }
 

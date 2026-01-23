@@ -7,7 +7,8 @@ import requireAdmin from '../../middleware/admin.js';
 const router = express.Router();
 
 
-router.get('/subs', async (_req, res, next) => {
+router.get('/subs', requireAdmin, async (_req, res, next) => {
+    console.log("subscription hit")
     try {
         const db = getDb();
         if (!db) return res.json([]);

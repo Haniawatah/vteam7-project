@@ -48,6 +48,11 @@ jobs:
         cd backend
         npm install
 
+    - name: EsLint Backend Code
+      run: |
+        cd backend
+        npx eslint .
+
     - name: Run Backend Tests
       run: |
         cd backend

@@ -129,7 +129,7 @@ router.delete('/scooters/:id', authenticate, requireAdmin, async (req, res) => {
 
 
 // ADMIN: Chaging the status of a scooter, for example turning it off
-router.put('/scooters/:scooterId', authenticate, requireAdmin, async (req, res) => {
+router.put('/scooters/:scooterId', authenticate, requireAdmin, async (req, res, next) => {
   try {
     const db = getDb();
     const { status } = req.body;

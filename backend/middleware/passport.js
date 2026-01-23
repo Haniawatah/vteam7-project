@@ -1,7 +1,8 @@
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
-import { getDb, makeSalt, hashPassword, verifyPassword } from '../database.js';
+import { getDb, makeSalt, hashPassword } from '../database.js';
 import { getJwtSecret } from './utils.js';
+import jwt from 'jsonwebtoken';
 
 passport.use(new GoogleStrategy(
     {
@@ -13,7 +14,7 @@ passport.use(new GoogleStrategy(
         try {
             //Get Db
             const db = getDb();
-            if (!db) return res.status(500).json({ message: 'Database not configured' });
+            if (!db) return done(new Error('Database not configured'));
 
             //Fixes the email
             const email = profile.emails[0].value;
@@ -48,12 +49,12 @@ passport.use(new GoogleStrategy(
                 return done(null, user);
             }
 
-            return done(null, account);
+            done(null, account);
         } catch (err) {
-            return done(err, null);
+            done(err, null);
         }
     }
-    ));
+));
 
 
 function getToken(req) {

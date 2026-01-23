@@ -8,10 +8,8 @@ import { ObjectId } from 'mongodb';
 import { toPublicUser, getWallet } from "../../models/user.js";
 
 import { checkToken } from '../../middleware/utils.js';
-import { signToken } from '../../middleware/signtoken.js';
 import { getDb } from '../../database.js';
 import requireAdminDefault, { requireAdmin as requireAdminNamed } from '../../middleware/admin.js';
-import { authenticate } from '../../middleware/passport.js';
 
 const router = express.Router();
 
@@ -26,7 +24,7 @@ const requireAdmin =
 
 
 
-router.get('/profile', async (req, res) => {
+router.get('/profile',  async (req, res) => {
     const db = getDb();
 
     if (!db) {

@@ -18,6 +18,7 @@ const Profile: React.FC = () => {
         const load = async () => {
             try {
                 const data = await fetchProfile();
+                console.log(data, "-asdasd")
                 setUser(data);
                 setError(null);
             } catch (e: any) {
@@ -139,7 +140,7 @@ const Profile: React.FC = () => {
 
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           <button className="button secondary" onClick={() => navigate('/rent')}>Hyr en scooter</button>
-          <button className="button secondary" onClick={monthly} disabled={!user.enabled}>Subscribe</button>
+          <button className="button secondary" onClick={monthly} >Subscribe</button>
         </div>
       </div>
 

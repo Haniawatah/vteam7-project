@@ -24,7 +24,7 @@ function hashCardNumber(cardNumber, salt = crypto.randomBytes(16).toString('hex'
   return `${salt}:${hash}`;
 }
 
-function verifyCard(cardNumber, stored) {
+function verifyCard(cardNumber, stored) { // eslint-disable-line no-unused-vars
   if (!stored || typeof stored !== 'string' || !stored.includes(':')) return false;
   const [salt] = stored.split(':');
   return hashCardNumber(cardNumber, salt) === stored;

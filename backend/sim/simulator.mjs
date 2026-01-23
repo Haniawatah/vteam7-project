@@ -115,7 +115,7 @@ async function waitForBackend() {
 // API helpers (matchar din frontend: /v1/login, /v1/register, /v1/scooters, /v1/ride/...)
 const apiLogin = (email, password) => http('POST', '/login', { body: { email, password }, okStatuses: [200, 201] });
 const apiRegister = (email, password, name) => http('POST', '/register', { body: { email, password, name }, okStatuses: [200, 201] });
-const apiGetScooters = (token) => http('GET', '/scooters', { token, okStatuses: [200] });
+const apiGetScooters = (token) => http('GET', '/scooters', { token, okStatuses: [200] }); // eslint-disable-line no-unused-vars
 const apiCreateScooter = (token, scooter) => http('POST', '/scooters', { token, body: scooter, okStatuses: [200, 201] });
 const apiStartRide = (token, scooterId) => http('POST', `/ride/start/${encodeURIComponent(scooterId)}`, { token, okStatuses: [200, 201] });
 const apiEndRide = (token, rideId, scooterId) =>
@@ -467,7 +467,7 @@ export async function autoScooterStation() {
             }
           );
         } catch (e) {
-          console.log("[SIM] ERROR IN SORTING SCOOTERS TO STATIONS")
+          console.log("[SIM] ERROR IN SORTING SCOOTERS TO STATIONS", e)
         }
       }
     }
@@ -477,7 +477,7 @@ export async function autoScooterStation() {
 }
 
 //Måste göras för annars när vi stoppar simulationen kanske några cyklarna är inUse,
-async function resetScooters() {
+async function resetScooters() { // eslint-disable-line no-unused-vars
   await http('POST', `/admin/scooter/reset`, { token: adminToken , okStatuses: [200]});
   console.log('[sim] scooters reset:');
 }
@@ -490,10 +490,12 @@ async function main() {
 
   await ensureAdminToken();
 
+  //await resetScooters();
 
   await ensureUsers();
   await ensureScooters();
 
+  //await autoScooterStation();
 
   let lastLog = 0;
   let stop = false;

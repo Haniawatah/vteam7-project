@@ -13,7 +13,7 @@ router.use(authenticate);
 router.use(requireAdmin);
 
 // GET all charging stations
-router.get('/stations', async (req, res) => {
+router.get('/stations', async (req, res, next) => {
     try {
         const db = getDb();
         if (!db) return res.json([]);

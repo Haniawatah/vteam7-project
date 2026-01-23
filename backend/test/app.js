@@ -3,12 +3,11 @@ import 'dotenv/config';
 import chaiHttp from "chai-http";
 import app from "../server.js";
 import * as chai from "chai";
-import { getDb, makeSalt, hashPassword, verifyPassword } from '../database.js';
+import { getDb, makeSalt, hashPassword } from '../database.js';
 import { closeDbTest, connectDbTest } from '../database.js';
-import { ObjectId } from 'mongodb';
 
-const should = chai.should();
-const expect = chai.expect;
+const should = chai.should(); // eslint-disable-line no-unused-vars
+const expect = chai.expect; // eslint-disable-line no-unused-vars
 const use = chai.use;
 
 
@@ -77,7 +76,7 @@ before(async () => {
     scooterId = scooter.id;
 
 
-    const allUsers = await users.find({}).toArray();
+    await users.find({}).toArray();
 });
 
 
@@ -94,7 +93,6 @@ let secondToken;
 let adminToken;
 let createdScooterId;
 let rideId;
-let zoneRideId;
 
 
 let accountUserId;

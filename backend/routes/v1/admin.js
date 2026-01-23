@@ -1,6 +1,4 @@
 import express from 'express';
-import * as elsparkcyklar from '../../models/elsparkcykel.js';
-import user from '../../models/user.js';
 
 import { checkToken } from '../../middleware/utils.js';
 import { checkAdmin } from '../../middleware/admin.js';

@@ -12,7 +12,7 @@ router.use(checkToken);
 
 
 // GET all parking stations
-router.get('/stations', async (req, res) => {
+router.get('/stations', async (req, res, next) => {
     try {
         const db = getDb();
         if (!db) return res.json([]);
@@ -27,7 +27,7 @@ router.get('/stations', async (req, res) => {
 
 
 // GET all parking stations
-router.get('/stations/get/:city', async (req, res) => {
+router.get('/stations/get/:city', async (req, res, next) => {
     const city = req.params.city
     try {
         const db = getDb();

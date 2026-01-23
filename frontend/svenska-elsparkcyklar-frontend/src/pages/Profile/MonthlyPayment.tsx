@@ -72,7 +72,7 @@ const MonthlySubscription = () => {
                 <p>Next Billing: {subscription?.nextBillingDate ? new Date(subscription.nextBillingDate).toLocaleDateString() : 'N/A'}</p>
             </div>
 
-            {subscription?.status === 'inactive' && (
+            {(!subscription?.status || subscription.status === 'inactive') && (
                 <button onClick={handleStart}>Start Subscription</button>
             )}
 

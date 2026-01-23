@@ -104,9 +104,6 @@ router.post('/ride/start/:scooterId', authenticate, async (req, res, next) => {
             console.error('[LOG] Failed to log ride start:', err);
         }
 
-
-
-
             const ride = {
                 _id: rideId,
                 id: rideId,
@@ -129,8 +126,6 @@ router.post('/ride/start/:scooterId', authenticate, async (req, res, next) => {
 // Hämtar aktiv resa + aktuell scooter-data (för ActiveRide-sidan)
 router.get('/ride/user/active', authenticate, async (req, res, next) => {
     try {
-        const db = getDb();
-        let user_id = req.user.id ?? req.user._id
 
         //HITTA AKTIV RIDE FÖR ATT LÄNKA SEN
         const activeRide = Array.from(mem.rides.values()).find(
@@ -270,17 +265,17 @@ router.post('/ride/end/:rideId', authenticate, async (req, res, next) => {
         let due;
         //Kollar ifall subscription så det inte kostar om man har subscription
         const subscriptionDoc = await db.collection('users').findOne(
-            { _id: rideUserId },
+            { id: rideUserId },
             { projection: { subscription: 1 } }
         );
 
         const subscription = subscriptionDoc?.subscription ?? null;
 
-        if (!subscription || (subscription.status !== 'active' && subscription.status !== 'stopping')) {
-        //Kollar ifall vi har plånbok
-            due = Number(ride.price ?? 0);
-        } else {
+        if (subscription && (subscription.status === 'active' || subscription.status === 'stopping')) {
+        //Kollar ifall vi har sub
             due = 0
+        } else {
+            due = Number(ride.price ?? 0);
         }
 
         await db.collection('log').updateOne(

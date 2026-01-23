@@ -40,6 +40,9 @@ const SubscriptionPanel: React.FC = () => {
     }
   };
 
+    useEffect(() => {
+      void refresh();
+    }, []);
 
   const fmt = (v?: any) => (v ? new Date(v).toLocaleString() : '—');
 

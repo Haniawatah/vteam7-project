@@ -14,7 +14,7 @@ app.get('/v1/health', (_req, res) => res.json({ ok: true }));
 app.use('/v1', v1);
 
 // error handler
-app.use((err, _req, res, _next) => {
+app.use((err, _req, res) => {
     const status = err?.status || 500;
     res.status(status).json({ message: err?.message || 'Server error' });
 });
