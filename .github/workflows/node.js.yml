@@ -33,7 +33,6 @@ jobs:
     strategy:
       matrix:
         node-version: [18.x, 20.x, 22.x]
-        mongodb-version: ['4.2', '4.4', '5.0']
       max-parallel: 1
 
     steps:
