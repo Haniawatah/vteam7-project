@@ -45,13 +45,23 @@ export async function connectDbTest() {
     process.env.MONGODB_URL_TEST ||
     'mongodb+srv://tiae24_db_user:fBxO5eHEFZPe0Aqv@cluster0.5s8wzba.mongodb.net/vteam7_test?retryWrites=true&w=majority';
 
+  // Close old client if it exists
+  if (_client) {
+    try { await _client.close(); } catch (e) { console.warn('Old client close failed', e); }
+  }
+
   _client = new MongoClient(uri, {
-    serverSelectionTimeoutMS: 10000, // 10 seconds max to select server
-    connectTimeoutMS: 5000,          // 5 seconds max for connection
-    monitorCommands: false,          // disables background pings
+    serverSelectionTimeoutMS: 15000, // slightly more tolerant in CI
+    connectTimeoutMS: 5000,
+    monitorCommands: false,
   });
 
-  await _client.connect();
+  try {
+    await _client.connect();
+  } catch (err) {
+    console.error('Failed to connect to MongoDB Test DB:', err);
+    throw err;
+  }
 
   const dbName = process.env.MONGODB_DB_TEST || 'vteam7_test';
   _db = _client.db(dbName);
