@@ -12,7 +12,10 @@ router.use(checkToken);
 
 
 router.get('/users', checkToken, checkAdmin, async (req, res) => {
-    const data = await user.getAll();
+    const db = await getDb();
+    if (!db) return res.json([]);
+
+    const data = await db.collection('users').find({}).limit(500).toArray();
     res.status(200).json(data);
 });
 
