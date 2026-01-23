@@ -1102,9 +1102,6 @@ describe.only('POST /register and login', () => {
     });
 
 
-
-
-
     //Subscription stuff
 
     it('Get subscription stuff', (done) => {
@@ -1123,7 +1120,6 @@ describe.only('POST /register and login', () => {
         request(app)
         .post('/v1/user/subscription/start')
         .set("x-access-token", secondToken)
-        .send({ amount: 50 })
         .end((err, res) => {
             if (err) return done(err);
                 res.should.have.status(200);
@@ -1132,12 +1128,10 @@ describe.only('POST /register and login', () => {
     });
 
 
-
     it('Cancel our subscription', (done) => {
         request(app)
         .put('/v1/user/subscription/cancel')
         .set("x-access-token", secondToken)
-        .send({ amount: 50 })
         .end((err, res) => {
             if (err) return done(err);
                 res.should.have.status(200);
@@ -1150,7 +1144,6 @@ describe.only('POST /register and login', () => {
         request(app)
         .post('/v1/user/subscription/reactivate')
         .set("x-access-token", secondToken)
-        .send({ amount: 50 })
         .end((err, res) => {
             if (err) return done(err);
                 res.should.have.status(200);
