@@ -36,7 +36,7 @@ before(async () => {
 
     const runId = Date.now();
     adminEmail = `admin${Date.now()}@gmail.com`;
-    adminId = `test_user${Date.now()}`
+    adminId = `u_${crypto.randomUUID()}`
     adminPassword = process.env.ADMIN_PASSWORD || 'adminvteam7';
     const salt = makeSalt();
     const passwordHash = hashPassword(adminPassword, salt);
