@@ -490,12 +490,10 @@ async function main() {
 
   await ensureAdminToken();
 
-  await resetScooters();
 
   await ensureUsers();
   await ensureScooters();
 
-  await autoScooterStation();
 
   let lastLog = 0;
   let stop = false;
