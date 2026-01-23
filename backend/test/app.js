@@ -25,7 +25,7 @@ before(async () => {
     //Tar bort så nya users varje gång
     await db.collection('users').deleteMany({});
 
-        
+
     const users = db.collection('users');
     await users.createIndex({ email: 1 }, { unique: true }).catch(() => {});
     await users.createIndex({ id: 1 }, { unique: true }).catch(() => {});
@@ -66,6 +66,7 @@ before(async () => {
 
 
     const firstUser = await users.findOne({ id: 'test1' });
+    if (!firstUser) throw new Error("Test user 'test1' not found");
     accountUserObjectId = firstUser._id.toString();
 
 
@@ -1038,7 +1039,7 @@ describe.only('Failing a log in', () => {
         .send({ email: 'fail', password: 'fail' })
         .end((err, res) => {
             if (err) return done(err);
-                res.should.have.status(400);
+                res.should.have.status(401);
             done();
         });
     });
