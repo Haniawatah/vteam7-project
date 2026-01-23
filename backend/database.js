@@ -44,16 +44,15 @@ export async function connectDbTest() {
   if (_db) return _db;
 
   const uri = process.env.MONGODB_URL_TEST;
-  if (!uri) throw new Error('Missing MongoDB URI (set MONGODB_URI or MONGODB_URL).');
+  if (!uri) throw new Error('Missing MongoDB URI (set MONGODB_URL_TEST).');
 
-  _client = new MongoClient(uri);
+  _client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
   await _client.connect();
 
-  const dbName = process.env.MONGODB_DB_TEST || undefined;
-  _db = dbName ? _client.db(dbName) : _client.db();
-
+  _db = _client.db();
   return _db;
 }
+
 
 
 export function getDb() {
