@@ -52,28 +52,25 @@ const Payments = () => {
     return (
         <div className="payment-container">
             <h2>Payment Methods</h2>
+
             {paymentInfo ? (
+            <>
                 <div>
                     <p>Card: **** **** **** {paymentInfo.last4}</p>
                     <p>Exp: {paymentInfo.exp_date}</p>
                 </div>
+
+                <div className="wallet-actions">
+                    <input type="number" placeholder="Amount to add" value={amount} onChange={(e) => setAmount(Number(e.target.value))} />
+                    <button onClick={handleAddMoney}>Add Money (Prepaid)</button>
+                </div>
+            </>
             ) : (
-                <p>No card info found.</p>
+            <p>No card info found.</p>
             )}
-
-            <div className="wallet-actions">
-
-                <input
-                    type="number"
-                    placeholder="Amount to add"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                />
-                <button onClick={handleAddMoney}>Add Money (Prepaid)</button>
-
-            </div>
         </div>
     );
+
 };
 
 export default Payments;

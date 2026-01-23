@@ -11,6 +11,12 @@ router.use(checkToken);
 
 
 
+router.get('/users', checkToken, checkAdmin, async (req, res) => {
+    const data = await user.getAll();
+    res.status(200).json(data);
+});
+
+
 router.get('/admin/users', checkToken, checkAdmin, async (_req, res) => {
     try {
         const db = await getDb();

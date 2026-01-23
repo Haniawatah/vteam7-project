@@ -27,7 +27,7 @@ async function tryGet(paths: string[]) {
 
 // Users (admin)
 export async function fetchUsersAdmin() {
-  return await tryGet(['/users', '/admin/users', '/user']);
+  return await tryGet(['/admin/users', '/users', '/user']);
 }
 
 // Optional admin actions (requires backend support)
