@@ -41,14 +41,20 @@ export async function connectDb() {
 export async function connectDbTest() {
   if (_db) return _db;
 
-  const uri = 'mongodb+srv://tiae24_db_user:fBxO5eHEFZPe0Aqv@cluster0.5s8wzba.mongodb.net/vteam7_test?retryWrites=true&w=majority&appName=text-editor&tls=true'
-  if (!uri) throw new Error('Missing MongoDB URI (set MONGODB_URI or MONGODB_URL).');
+  const uri =
+    process.env.MONGODB_URL_TEST ||
+    'mongodb+srv://tiae24_db_user:fBxO5eHEFZPe0Aqv@cluster0.5s8wzba.mongodb.net/vteam7_test?retryWrites=true&w=majority';
 
-  _client = new MongoClient(uri);
+  _client = new MongoClient(uri, {
+    serverSelectionTimeoutMS: 10000, // 10 seconds max to select server
+    connectTimeoutMS: 5000,          // 5 seconds max for connection
+    monitorCommands: false,          // disables background pings
+  });
+
   await _client.connect();
 
   const dbName = process.env.MONGODB_DB_TEST || 'vteam7_test';
-  _db = dbName ? _client.db(dbName) : _client.db();
+  _db = _client.db(dbName);
 
   return _db;
 }
