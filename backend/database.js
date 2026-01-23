@@ -47,8 +47,8 @@ export async function connectDbTest() {
     'mongodb+srv://tiae24_db_user:fBxO5eHEFZPe0Aqv@cluster0.5s8wzba.mongodb.net/vteam7_test?retryWrites=true&w=majority';
 
   _client = new MongoClient(uri, {
-    serverSelectionTimeoutMS: 20000,
-    connectTimeoutMS: 10000,
+    serverSelectionTimeoutMS: 25000,
+    connectTimeoutMS: 15000,
     monitorCommands: false,
   });
 
@@ -73,6 +73,7 @@ export async function closeDbTest() {
 
 export function getDb() {
   if (!_db) {
+    console.log("ERORR_---------------------------------------------------------------------------------------------------")
     throw new Error('DB not connected (call connectDb() during startup)');
   }
   return _db;
