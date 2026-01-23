@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { getDb } from '../../database.js';
+import { getDb } from '../database.js';
 import { ObjectId } from 'mongodb';
 
 function normalizeEmail(email) {
