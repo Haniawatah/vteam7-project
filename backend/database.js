@@ -39,29 +39,20 @@ export async function connectDb() {
 
 //För att köra tester
 export async function connectDbTest() {
+  console.log("ag ---")
   if (_db) return _db;
 
   const uri =
     process.env.MONGODB_URL_TEST ||
     'mongodb+srv://tiae24_db_user:fBxO5eHEFZPe0Aqv@cluster0.5s8wzba.mongodb.net/vteam7_test?retryWrites=true&w=majority';
 
-  // Close old client if it exists
-  if (_client) {
-    try { await _client.close(); } catch (e) { console.warn('Old client close failed', e); }
-  }
-
   _client = new MongoClient(uri, {
-    serverSelectionTimeoutMS: 15000, // slightly more tolerant in CI
-    connectTimeoutMS: 5000,
+    serverSelectionTimeoutMS: 20000,
+    connectTimeoutMS: 10000,
     monitorCommands: false,
   });
 
-  try {
-    await _client.connect();
-  } catch (err) {
-    console.error('Failed to connect to MongoDB Test DB:', err);
-    throw err;
-  }
+  await _client.connect();
 
   const dbName = process.env.MONGODB_DB_TEST || 'vteam7_test';
   _db = _client.db(dbName);
