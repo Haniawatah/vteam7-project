@@ -40,25 +40,21 @@ export async function connectDb() {
 }
 
 //För att köra tester
-export async function connectDbTest(retries = 5) {
-  const uri = process.env.MONGODB_URL_TEST;
-  if (!uri) throw new Error('Missing MongoDB URI');
+export async function connectDbTest() {
+  if (_db) return _db;
 
-  while (retries > 0) {
-    try {
-      const client = new MongoClient(uri);
-      await client.connect();
-      _client = client;
-      _db = client.db(process.env.MONGODB_DB_TEST || 'vteam7_test');
-      return _db;
-    } catch (err) {
-      retries--;
-      console.log('MongoDB connection failed, retrying...', retries);
-      await new Promise(r => setTimeout(r, 2000));
-    }
-  }
-  throw new Error('Failed to connect to MongoDB after retries');
+  const uri = 'mongodb+srv://tiae24_db_user:fBxO5eHEFZPe0Aqv@cluster0.5s8wzba.mongodb.net/vteam7_test?retryWrites=true&w=majority&appName=text-editor&tls=true'
+  if (!uri) throw new Error('Missing MongoDB URI (set MONGODB_URI or MONGODB_URL).');
+
+  _client = new MongoClient(uri);
+  await _client.connect();
+
+  const dbName = process.env.MONGODB_DB_TEST || 'vteam7_test';
+  _db = dbName ? _client.db(dbName) : _client.db();
+
+  return _db;
 }
+
 
 
 export function getDb() {
