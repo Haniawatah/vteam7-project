@@ -26,8 +26,7 @@ before(async () => {
     await connectDbTest();
 
     const db = getDb();
-    //Tar bort så nya users varje gång
-    await db.collection('users').deleteMany({});
+
 
 
     const users = db.collection('users');
