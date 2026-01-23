@@ -24,7 +24,6 @@ jobs:
       DB_PASS: ${{ secrets.DB_PASS }}
       NODE_ENV: ${{ secrets.NODE_ENV }}
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
-      SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
       GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
       GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
       SEED_DB: ${{ secrets.SEED_DB }}
@@ -35,6 +34,7 @@ jobs:
       matrix:
         node-version: [18.x, 20.x, 22.x]
         mongodb-version: ['4.2', '4.4', '5.0']
+      max-parallel: 1
 
     steps:
     - uses: actions/checkout@v3
