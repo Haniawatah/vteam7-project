@@ -24,7 +24,7 @@ function dbNameFromUri(uri) {
 export async function connectDb() {
   if (_db) return _db;
 
-  //Ändrade till för köra npm start (MONGODB_URL), annars DATABASE_URL
+  //Ändrade till för köra npm start (MONGODB_URL (användes förut)), annars DATABASE_URL
   const uri = process.env.DATABASE_URL || process.env.MONGODB_URI;
   if (!uri) throw new Error('DATABASE_URL is not configured');
 
