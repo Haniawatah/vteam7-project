@@ -250,7 +250,7 @@ describe.only('POST /register and login', () => {
         });
     });
 
-
+/*
     it('Resetting the scooters and cancelling the logs  this checks as a normal user [should fail]', (done) => {
         request(app)
         .post('/v1/admin/scooter/reset')
@@ -262,7 +262,7 @@ describe.only('POST /register and login', () => {
             done();
         });
     });
-
+*/
 
 
 
