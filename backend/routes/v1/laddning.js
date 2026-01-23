@@ -28,7 +28,6 @@ router.get('/stations', async (req, res) => {
 
 
 router.post('/scooter/:scooterId/charge', async (req, res, next) => {
-    console.log("hej")
     try {
         const { station } = req.body;
         const scooterId = req.params.scooterId;

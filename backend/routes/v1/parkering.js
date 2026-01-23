@@ -13,7 +13,6 @@ router.use(checkToken);
 
 // GET all parking stations
 router.get('/stations', async (req, res) => {
-    console.log("hej")
     try {
         const db = getDb();
         if (!db) return res.json([]);
@@ -46,7 +45,6 @@ router.get('/stations/get/:city', async (req, res) => {
 
 // POST /bikes/:bikeId/park
 router.post('/scooter/:scooterId/park', checkAdmin , async (req, res, next) => {
-    console.log("hej")
     try {
         const { station } = req.body;
         const scooterId = req.params.scooterId;

@@ -139,11 +139,6 @@ router.put('/scooters/:scooterId', authenticate, requireAdmin, async (req, res) 
     const scooter = await db.collection('scooters').findOne({ id: scooterId });
     if (!scooter) return res.status(404).json({ message: 'Scooter not found' });
 
-    console.log(status, "stautS:", "testas: ", scooterId)
-
-    console.log(scooter)
-
-
     //Checks if the current scooter is InUse if so you have to cancel the order
     if (scooter.status === 'InUse') {
       await db.collection('log').updateOne(

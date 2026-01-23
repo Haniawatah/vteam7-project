@@ -67,7 +67,6 @@ router.get('/payment', async (req, res) => {
 });
 
 router.put('/payment', async (req, res) => {
-  console.log("payment route hit");
   try {
     const userId = req.user._id;
     if (!userId) return res.status(401).json({ success: false, error: 'Invalid token' });
@@ -129,7 +128,6 @@ router.get('/wallet', async (req, res) => {
 
     const wallet = await getWallet(req.user._id);
 
-    console.log(wallet)
     res.status(200).json({ success: true, wallet });
 
 });
@@ -138,11 +136,8 @@ router.get('/wallet', async (req, res) => {
 
 
 router.get('/subscription', async (req, res) => {
-    console.log(req.user, "route:ska")
     try {
         const subscription = await user.getSubscription(req.user._id);
-
-        console.log(subscription)
         res.status(200).json({ success: true, subscription });
     } catch (e) {
         console.error(e);
@@ -183,7 +178,6 @@ router.post('/subscription/start', async (req, res) => {
 
     const updated = await user.updateSubscription(userId, subscriptionData);
 
-    console.log(updated, "updater")
     res.status(200).json({ success: true, subscription: updated });
 
 });

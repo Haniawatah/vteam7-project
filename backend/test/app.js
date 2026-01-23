@@ -74,8 +74,6 @@ before(async () => {
 
     let scooter = await scooters.findOne({ status: 'Available' });
 
-    console.log(scooter, "-")
-
     scooterId = scooter.id;
 
 
@@ -343,7 +341,6 @@ describe.only('POST /register and login', () => {
         .set("x-access-token", token)
         .end((err, res) => {
             if (err) return done(err);
-                console.log(res.body, "------------------------- dwa d--------------------aaaaaaaaaaaaaa")
                 res.body.should.have.property('price')
             done();
         });

@@ -3,8 +3,6 @@ import { MongoClient, ObjectId } from 'mongodb';
 import { inStationZone } from './middleware/inZone.js';
 
 
-console.log("hej")
-
 let _client;
 let _db;
 

@@ -8,7 +8,6 @@ const router = express.Router();
 
 
 router.get('/subs', async (_req, res, next) => {
-    console.log("hejsan")
     try {
         const db = getDb();
         if (!db) return res.json([]);
