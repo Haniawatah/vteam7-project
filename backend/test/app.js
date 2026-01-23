@@ -1,7 +1,7 @@
 import 'dotenv/config';
 
 import chaiHttp from "chai-http";
-import app from "../index.js";
+import app from "../server.js";
 import * as chai from "chai";
 import { getDb, makeSalt, hashPassword, verifyPassword } from '../database.js';
 import { closeDbTest, connectDbTest } from '../database.js';
