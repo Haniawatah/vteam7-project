@@ -1140,6 +1140,16 @@ describe.only('POST /register and login', () => {
     });
 
 
+    it('Re start our subscription', (done) => {
+        request(app)
+        .post('/v1/user/subscription/reactivate')
+        .set("x-access-token", secondToken)
+        .end((err, res) => {
+            if (err) return done(err);
+                res.should.have.status(200);
+            done();
+        });
+    });
 
 });
 
