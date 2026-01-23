@@ -1,10 +1,6 @@
 import { MongoClient } from 'mongodb';
 import 'dotenv/config';
 
-
-
-let _dbProd, _dbTest;
-
 async function connectDb(uri, dbName) {
     const client = new MongoClient(uri);
     await client.connect();
@@ -12,11 +8,11 @@ async function connectDb(uri, dbName) {
 }
 
 async function copyDb() {
-    // Connect to production DB
+    // Connect to production DB (Atlas)
     const prodDb = await connectDb(process.env.MONGODB_URL, 'vteam7');
 
-    // Connect to test DB
-    const testDb = await connectDb(process.env.MONGODB_URL_TEST, 'vteam7_test');
+    // Connect to test DB (Local Mongo)
+    const testDb = await connectDb('mongodb://localhost:27017/vteam7_test', 'vteam7_test');
 
     // Get all collections from production
     const collections = await prodDb.listCollections().toArray();
@@ -24,7 +20,7 @@ async function copyDb() {
     for (const col of collections) {
         const data = await prodDb.collection(col.name).find({}).toArray();
 
-        // Replace collection in test DB only
+        // Replace collection in local test DB
         await testDb.collection(col.name).deleteMany({}); // clear test collection
         if (data.length > 0) {
             await testDb.collection(col.name).insertMany(data); // copy documents
@@ -33,8 +29,10 @@ async function copyDb() {
         console.log(`Copied collection "${col.name}" (${data.length} documents)`);
     }
 
-    console.log('✅ All collections copied from vteam7 → vteam7_test');
+    console.log('✅ All collections copied from vteam7 → local vteam7_test');
 }
 
-copyDb();
-
+// Run script
+copyDb().catch(err => {
+    console.error('Failed to copy DB:', err);
+});

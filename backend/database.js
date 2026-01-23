@@ -43,14 +43,12 @@ export async function connectDb() {
 export async function connectDbTest() {
   if (_db) return _db;
 
-  const uri = process.env.MONGODB_URL_TEST;
-  if (!uri) throw new Error('Missing MongoDB URI (set MONGODB_URI or MONGODB_URL).');
-
+  const uri = process.env.MONGODB_URL_TEST || 'mongodb://localhost:27017/vteam7_test';
   _client = new MongoClient(uri);
   await _client.connect();
 
-  const dbName = process.env.MONGODB_DB_TEST || undefined;
-  _db = dbName ? _client.db(dbName) : _client.db();
+  const dbName = 'vteam7_test';
+  _db = _client.db(dbName);
 
   return _db;
 }
