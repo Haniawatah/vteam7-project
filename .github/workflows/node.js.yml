@@ -58,7 +58,7 @@ jobs:
       - name: Seed local test DB from Atlas
         run: |
           cd backend
-          node scripts/copyDb.js
+          node copy.js
         env:
           MONGODB_URL: ${{ secrets.MONGODB_URL }}
 
