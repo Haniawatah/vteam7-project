@@ -20,12 +20,12 @@ router.post('/ride/start/:scooterId', authenticate, async (req, res, next) => {
         if (scooter.status !== 'Available') return res.status(409).json({ message: 'Scooter not available' });
 
         for (const r of mem.rides.values()) {
-        if (r.userId === req.user.id && r.status === 'active') return res.status(409).json({ message: 'Already riding' });
+            if (r.userId === req.user.id && r.status === 'active') return res.status(409).json({ message: 'Already riding' });
         }
 
         const subscriptionDoc = await db.collection('users').findOne(
-        { _id: req.user._id },
-        { projection: { subscription: 1 } }
+            { _id: req.user._id },
+            { projection: { subscription: 1 } }
         );
 
         const subscription = subscriptionDoc?.subscription ?? null;
@@ -82,16 +82,40 @@ router.post('/ride/start/:scooterId', authenticate, async (req, res, next) => {
 
         await db.collection('scooters').updateOne({ id: scooterId }, { $set: { status: 'InUse', updatedAt: new Date() } });
 
+
+
         const rideId = `ride_${crypto.randomUUID()}`;
-        const ride = {
-            _id: rideId,
-            id: rideId,
-            userId: req.user.id,
-            scooterId,
-            start_time: nowIso(),
-            end_time: null,
-            status: 'active',
-            price: 0,
+
+
+
+        try {
+            await db.collection('log').insertOne({
+                id: rideId,
+                userId: req.user.user_id || req.user.userId || req.user.id ,
+                email: req.user.email,
+                scooterId: scooterId,
+                status: 'active',
+                start_time: nowIso(),
+                start_location: scooter.location,
+                end_time: null,
+                createdAt: new Date(),
+            });
+        } catch (err) {
+            console.error('[LOG] Failed to log ride start:', err);
+        }
+
+
+
+
+            const ride = {
+                _id: rideId,
+                id: rideId,
+                user_id: req.user.id,
+                scooterId,
+                start_time: nowIso(),
+                end_time: null,
+                status: 'active',
+                price: 0,
             };
 
             mem.rides.set(rideId, ride);
@@ -101,6 +125,35 @@ router.post('/ride/start/:scooterId', authenticate, async (req, res, next) => {
         }
 });
 
+
+// Hämtar aktiv resa + aktuell scooter-data (för ActiveRide-sidan)
+router.get('/ride/user/active', authenticate, async (req, res, next) => {
+    try {
+        const db = getDb();
+        let user_id = req.user.id ?? req.user._id
+
+        //HITTA AKTIV RIDE FÖR ATT LÄNKA SEN
+        const activeRide = Array.from(mem.rides.values()).find(
+            (r) => (r.userId ?? r.user_id) === req.user.id && r.status === 'active'
+        );
+
+        let foundBike;
+        if (activeRide) {
+            foundBike = true
+        } else {
+            foundBike = false
+        }
+
+        res.json({ success: foundBike, ride: activeRide });
+    } catch (err) {
+        next(err);
+    }
+});
+
+
+
+
+
 // Hämtar aktiv resa + aktuell scooter-data (för ActiveRide-sidan)
 router.get('/ride/active/:rideId', authenticate, async (req, res, next) => {
     try {
@@ -109,7 +162,8 @@ router.get('/ride/active/:rideId', authenticate, async (req, res, next) => {
 
         const ride = mem.rides.get(req.params.rideId);
         if (!ride) return res.status(404).json({ message: 'Ride not found' });
-        if (req.user.role !== 'admin' && ride.userId !== req.user.id) return res.status(403).json({ message: 'Forbidden' });
+        const rideUserId = ride.userId ?? ride.user_id;
+        if (req.user.role !== 'admin' && rideUserId !== req.user.id) return res.status(403).json({ message: 'Forbidden' });
 
         const scooter = await db.collection('scooters').findOne({ id: ride.scooterId });
 
@@ -123,7 +177,8 @@ router.get('/ride/active/:rideId', authenticate, async (req, res, next) => {
 router.get('/ride/price/:rideId', authenticate, (req, res) => {
     const ride = mem.rides.get(req.params.rideId);
     if (!ride) return res.status(404).json({ message: 'Ride not found' });
-    if (req.user.role !== 'admin' && ride.userId !== req.user.id) return res.status(403).json({ message: 'Forbidden' });
+    const rideUserId = ride.userId ?? ride.user_id;
+    if (req.user.role !== 'admin' && rideUserId !== req.user.id) return res.status(403).json({ message: 'Forbidden' });
     res.json({ price: computeRidePrice(ride) });
 });
 
@@ -133,17 +188,19 @@ router.post('/ride/end/:rideId', authenticate, async (req, res, next) => {
         const db = getDb();
         if (!db) return res.status(500).json({ message: 'Database not configured' });
 
-        const ride = mem.rides.get(req.params.rideId);
-        if (!ride) return res.status(404).json({ message: 'Ride not found' });
-        if (req.user.role !== 'admin' && ride.userId !== req.user.id) return res.status(403).json({ message: 'Forbidden' });
-        if (ride.status !== 'active') return res.status(409).json({ message: 'Ride is not active' });
 
+        const ride = mem.rides.get(req.params.rideId);
+
+        if (!ride) return res.status(404).json({ message: 'Ride not found' });
+
+        const rideUserId = ride.userId ?? ride.user_id;
+
+        if (req.user.role !== 'admin' && rideUserId !== req.user.id) return res.status(403).json({ message: 'Forbidden' });
+        if (ride.status !== 'active') return res.status(409).json({ message: 'Ride is not active' });
 
         ride.status = 'ended';
         ride.end_time = nowIso();
         ride.price = computeRidePrice(ride);
-
-        await db.collection('scooters').updateOne({ id: ride.scooterId }, { $set: { status: 'Available', updatedAt: new Date() } });
 
         await db.collection('scooters').updateOne({ id: ride.scooterId }, { $set: { status: 'Available', updatedAt: new Date() } });
 
@@ -152,11 +209,13 @@ router.post('/ride/end/:rideId', authenticate, async (req, res, next) => {
             id: ride.scooterId
         });
 
+
         if (!scooter) {
             return res.status(404).json({
                 message: `Scooter ${ride.scooterId} not found`
             });
         }
+
 
         //Fixar våran stad och X och Y
         const scooterCity = scooter.city;
@@ -164,7 +223,7 @@ router.post('/ride/end/:rideId', authenticate, async (req, res, next) => {
         const scooterY = scooter.location.lng;
 
 
-        const city = await db.collection('city').findOne({ namn: scooter.city });
+        const city = await db.collection('city').findOne({ namn: scooterCity });
 
         const laddStation = await db.collection('laddningStation').find({ stad_id: city._id }).toArray();
         const parkeringStation = await db.collection('parkeringStation').find({ stad_id: city._id }).toArray();
@@ -208,13 +267,11 @@ router.post('/ride/end/:rideId', authenticate, async (req, res, next) => {
         }
 
 
-
-
         let due;
         //Kollar ifall subscription så det inte kostar om man har subscription
         const subscriptionDoc = await db.collection('users').findOne(
-        { _id: req.user._id },
-        { projection: { subscription: 1 } }
+            { _id: rideUserId },
+            { projection: { subscription: 1 } }
         );
 
         const subscription = subscriptionDoc?.subscription ?? null;
@@ -226,10 +283,25 @@ router.post('/ride/end/:rideId', authenticate, async (req, res, next) => {
             due = 0
         }
 
+        await db.collection('log').updateOne(
+            { id: ride.id },
+                {
+                $set: {
+                    end_location: scooter.location,
+                    end_time: nowIso(),
+                    price: due,
+                    status: 'Complete',
+                }
+            }
+        );
+
+
+
+
         const upd = await db.collection('users').findOneAndUpdate(
-        { id: ride.userId },
-        { $inc: { wallet: -due }, $set: { updatedAt: new Date() } },
-        { returnDocument: 'after' }
+            { id: rideUserId },
+            { $inc: { wallet: -due }, $set: { updatedAt: new Date() } },
+            { returnDocument: 'after' }
         );
 
         res.json({ ok: true, ride, charged: due, wallet: Number(upd?.value?.wallet ?? 0) });
@@ -239,9 +311,31 @@ router.post('/ride/end/:rideId', authenticate, async (req, res, next) => {
 });
 
 // Hämtar historik för avslutade resor
-router.get('/ride/history', authenticate, (req, res) => {
-    const rows = [...mem.rides.values()].filter((r) => r.userId === req.user.id && r.status !== 'active');
-    res.json(rows);
+router.get('/ride/history', authenticate, async (req, res) => {
+    try {
+        const db = await getDb();
+        if (!db) return res.json([]);
+        const logs = await db.collection('log')
+            .find({ userId: req.user.id, status: { $ne: 'active' } })
+            .toArray();
+        res.status(200).json({ success: true, logs });
+    } catch (err) {
+        console.error("Error fetching ride history:", err);
+        res.status(500).json({ success: false, message: "Error fetching ride history" });
+    }
 });
+
+
+// Hämtar historik för avslutade resor
+router.get('/ride/all/history', authenticate, async (req, res) => {
+    try {
+        const db = await getDb();
+        const logs = await db.collection('log').find({}).limit(500).toArray();
+        res.json(logs);
+    } catch {
+        res.json([]);
+    }
+});
+
 
 export default router;

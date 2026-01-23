@@ -40,6 +40,7 @@ const UsersPanel: React.FC = () => {
     setError(null);
     try {
       const data = await fetchUsersAdmin();
+      console.log(data, "daw")
       const list = Array.isArray(data) ? data : Array.isArray((data as any)?.data) ? (data as any).data : [];
       setRows(list.map(normalizeUser).filter((u) => u.id && u.email));
     } catch (e: any) {

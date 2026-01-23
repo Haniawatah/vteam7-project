@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { fetchScootersAvailable } from '../../services/scooters';
+import { fetchScootersSpecificCity } from '../../services/scooters';
 import { chargingScooter } from '../../services/scooters';
 import { useParams } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
@@ -18,7 +18,7 @@ const ChargeScooter: React.FC = () => {
     const loadBikes = async () => {
       try {
         setLoading(true);
-        const data = await fetchScootersAvailable();
+        const data = await fetchScootersSpecificCity(stationId);
         const bikeList = data.map((b: any) => (b.id));
         setBikes(bikeList);
       } catch (err: any) {
@@ -43,7 +43,7 @@ const ChargeScooter: React.FC = () => {
   if (error) return <span style={{ color: 'red' }}>{error}</span>;
 
   return (
-    <div>
+    <div className="profile-card">
       <label>
         Select a bike:
         <select

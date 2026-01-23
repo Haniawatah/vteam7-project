@@ -45,11 +45,12 @@ passport.use(new GoogleStrategy(
                     updatedAt: new Date(),
                 };
                 await users.insertOne(user);
+                return done(null, user);
             }
 
-        return done(null, account);
+            return done(null, account);
         } catch (err) {
-        return done(err, null);
+            return done(err, null);
         }
     }
     ));

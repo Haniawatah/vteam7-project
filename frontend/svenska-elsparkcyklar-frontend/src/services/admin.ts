@@ -78,7 +78,7 @@ export async function fetchChargingAdmin() {
 
 // Logs / ride history
 export async function fetchLogsAdmin() {
-  return await tryGet(['/rides/history', '/logs']);
+  return await tryGet(['/ride/all/history', '/logs']);
 }
 
 export async function fetchSubscriptionsAdmin() {
@@ -88,3 +88,32 @@ export async function fetchSubscriptionsAdmin() {
   console.log(res.data, "--------------")
   return res.data;
 }
+
+export async function fetchInvoicesAdmin() {
+  const res = await api.get(`/invoices/all`, {
+    headers: { 'Content-Type': 'application/json', ...tokenHeader() },
+  });
+  console.log(res.data, "--------------")
+  return res.data;
+}
+
+
+
+
+//For the admin that changes the scooter status
+export const adminChangesScooter = async (scooterId: string, newStatus: string) => {
+  const res = await api.put( `/scooters/${scooterId}`,{ status: newStatus },
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        ...tokenHeader(),
+      },
+    }
+  );
+
+  return res.data;
+};
+
+
+
+

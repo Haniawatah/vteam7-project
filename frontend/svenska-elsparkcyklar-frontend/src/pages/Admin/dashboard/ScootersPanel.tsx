@@ -1,101 +1,147 @@
 import React, { useMemo, useState } from 'react';
 import { useScooters } from '../../../hooks/useScooters';
 import type { Scooter, ScooterStatus } from '../../../types';
-
-const STATUS_ORDER: ScooterStatus[] = ['Available', 'InUse', 'Maintenance', 'Off'];
-
-function nextStatus(current: ScooterStatus): ScooterStatus {
-  const idx = STATUS_ORDER.indexOf(current);
-  return STATUS_ORDER[(idx + 1) % STATUS_ORDER.length];
-}
+import api from '../../../services/api';
+import { adminChangesScooter } from '../../../services/admin';
 
 const ScootersPanel: React.FC = () => {
-  // Keep existing auto-refresh behavior
   const { scooters, loading, error, refreshScooters } = useScooters(5000);
 
-  // Simulated local change (no backend write)
-  const [statusOverride, setStatusOverride] = useState<Record<string, ScooterStatus>>({});
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingStatus, setEditingStatus] = useState<ScooterStatus>('Available');
+  const [busy, setBusy] = useState(false);
 
-  const rows: Scooter[] = useMemo(() => {
-    return scooters.map((s) => ({
-      ...s,
-      status: statusOverride[s.id] ?? s.status,
-    }));
-  }, [scooters, statusOverride]);
+  const rows = useMemo(() => scooters, [scooters]);
 
-  const onChangeStatus = (s: Scooter) => {
-    const updated = nextStatus(statusOverride[s.id] ?? s.status);
-    setStatusOverride((m) => ({ ...m, [s.id]: updated }));
-
-    // If you later implement a PUT/PATCH endpoint, do it here then refresh:
-    // await api.put(`/scooters/${s.id}`, { status: updated });
-    // await refreshScooters();
+  //Where we start the edit (the change status button)
+  const startEdit = (s: Scooter) => {
+    setEditingId(s.id);
+    setEditingStatus(s.status);
   };
+
+  //Cancel the "edit"
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditingStatus('Available');
+  };
+
+  //THe thing where we edit it
+  const saveEdit = async () => {
+  if (!editingId) return;
+    setBusy(true);
+      try {
+        const result = await adminChangesScooter(editingId, editingStatus);
+        console.log('Backend', result);
+
+        await refreshScooters();
+        cancelEdit();
+      } catch (err: any) {
+        console.error(err);
+        alert(err?.message ?? 'Failed to update scooter status');
+      } finally {
+        setBusy(false);
+      }
+    };
 
   return (
     <section style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 16 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
         <h1 style={{ margin: 0 }}>Scooters</h1>
 
-        <button onClick={() => void refreshScooters()} disabled={loading}>
+        <button onClick={() => void refreshScooters()} disabled={loading || busy}>
           Refresh
         </button>
 
-        {loading ? <span>Loading…</span> : null}
+        {loading && <span>Loading…</span>}
       </div>
 
-      {error ? (
-        <div style={{ marginBottom: 12 }}>
-          <strong>Error:</strong> {error}{' '}
-          <button onClick={() => void refreshScooters()}>
-            Retry
-          </button>
+      {error && (
+        <div className="error" style={{ marginBottom: 12 }}>
+          {error}
         </div>
-      ) : null}
+      )}
 
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
         <thead>
           <tr>
-            <th style={{ textAlign: 'left', borderBottom: '1px solid #ddd', padding: 8 }}>ID</th>
-            <th style={{ textAlign: 'left', borderBottom: '1px solid #ddd', padding: 8 }}>City</th>
-            <th style={{ textAlign: 'left', borderBottom: '1px solid #ddd', padding: 8 }}>Status</th>
-            <th style={{ textAlign: 'right', borderBottom: '1px solid #ddd', padding: 8 }}>Battery</th>
-            <th style={{ textAlign: 'right', borderBottom: '1px solid #ddd', padding: 8 }}>Lat</th>
-            <th style={{ textAlign: 'right', borderBottom: '1px solid #ddd', padding: 8 }}>Lng</th>
-            <th style={{ textAlign: 'left', borderBottom: '1px solid #ddd', padding: 8 }}>Actions</th>
+            <th style={{ textAlign: 'left', padding: 8 }}>ID</th>
+            <th style={{ textAlign: 'left', padding: 8 }}>City</th>
+            <th style={{ textAlign: 'left', padding: 8 }}>Status</th>
+            <th style={{ textAlign: 'right', padding: 8 }}>Battery</th>
+            <th style={{ textAlign: 'right', padding: 8 }}>Lat</th>
+            <th style={{ textAlign: 'right', padding: 8 }}>Lng</th>
+            <th style={{ padding: 8 }}>Actions</th>
           </tr>
         </thead>
 
         <tbody>
-          {rows.map((s) => (
-            <tr key={s.id}>
-              <td style={{ borderBottom: '1px solid #eee', padding: 8, fontFamily: 'monospace' }}>{s.id}</td>
-              <td style={{ borderBottom: '1px solid #eee', padding: 8 }}>{s.city}</td>
-              <td style={{ borderBottom: '1px solid #eee', padding: 8 }}>{s.status}</td>
-              <td style={{ borderBottom: '1px solid #eee', padding: 8, textAlign: 'right' }}>
-                {Math.round(s.batteryLevel)}%
-              </td>
-              <td style={{ borderBottom: '1px solid #eee', padding: 8, textAlign: 'right' }}>
-                {(s.location?.lat ?? 0).toFixed(6)}
-              </td>
-              <td style={{ borderBottom: '1px solid #eee', padding: 8, textAlign: 'right' }}>
-                {(s.location?.lng ?? 0).toFixed(6)}
-              </td>
-              <td style={{ borderBottom: '1px solid #eee', padding: 8 }}>
-                <button onClick={() => onChangeStatus(s)}>Change Status</button>
-              </td>
-            </tr>
-          ))}
+          {rows.map((s) => {
+            const isEditing = editingId === s.id;
 
-          {!loading && rows.length === 0 ? (
+            return (
+              <tr key={s.id}>
+                <td style={{ padding: 8, fontFamily: 'monospace' }}>{s.id}</td>
+                <td style={{ padding: 8 }}>{s.city || '—'}</td>
+
+                <td style={{ padding: 8 }}>
+                  {isEditing ? (
+                    <select value={editingStatus} onChange={(e) => setEditingStatus(e.target.value as ScooterStatus) } disabled={busy}>
+                        <option value='Available'>Available</option>
+                        <option value='InUse'>InUse</option>
+                        <option value='Maintenance'>Maintenance</option>
+                        <option value='Charging'>Charging</option>
+                        <option value='Off'>Off</option>
+                    </select>
+                  ) : (
+                    <span>{s.status}</span>
+                  )}
+                </td>
+
+                <td style={{ padding: 8, textAlign: 'right' }}>
+                  {Math.round(s.batteryLevel)}%
+                </td>
+
+                <td style={{ padding: 8, textAlign: 'right' }}>
+                  {(s.location?.lat ?? 0).toFixed(6)}
+                </td>
+
+                <td style={{ padding: 8, textAlign: 'right' }}>
+                  {(s.location?.lng ?? 0).toFixed(6)}
+                </td>
+
+                <td style={{ padding: 8 }}>
+                  {isEditing ? (
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button onClick={saveEdit} disabled={busy}>
+                        Save
+                      </button>
+                      <button className="secondary" onClick={cancelEdit} disabled={busy}>
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    <button onClick={() => startEdit(s)} disabled={busy}>
+                      Change status
+                    </button>
+                  )}
+                </td>
+              </tr>
+            );
+          })}
+
+          {!loading && rows.length === 0 && (
             <tr>
               <td colSpan={7} style={{ padding: 12 }}>
                 No scooters found.
               </td>
             </tr>
-          ) : null}
+          )}
         </tbody>
       </table>
+
+      <div style={{ marginTop: 12, fontSize: 12, color: 'var(--muted)' }}>
+        Admin can override status even while a scooter is in use.
+      </div>
     </section>
   );
 };

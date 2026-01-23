@@ -24,37 +24,33 @@ const requireAdmin =
       ? requireAdminNamed
       : null;
 
-// GET all users
-router.get('/users', async (req, res) => {
-    const data = await user.getAll();
-    res.status(200).json(data);
-});
-
-
-router.post("/register", async (req, res) => {
-    console.log(req)
-    const result = await user.register(req.body);
-    res.status(201).json({ result });
-});
-
 
 
 router.get('/profile', async (req, res) => {
-    console.log("hejsan")
-    const userEmail = req.user.email;
+    const db = getDb();
 
-    console.log(req.user, "users")
-
-    const data = await user.getOne(userEmail);
-    
-    if (!data) {
-        return res.status(404).json({ success: false, message: 'User not found' });
+    if (!db) {
+        return res.status(500).json({ message: 'Database not configured' });
     }
 
+    try {
+        const data = await db.collection('users').findOne({
+            email: req.user.email
+        });
 
-    res.status(200).json({ data });
+        if (!data) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
 
+        res.status(200).json({ data });
+    } catch (err) {
+        console.error("Error fetching user:", err);
+        res.status(500).json({ success: false, message: 'Internal server error' });
+    }
 });
+
+
+
 
 
 router.get('/payment', async (req, res) => {
@@ -112,6 +108,7 @@ router.put('/wallet/add', async (req, res) => {
 
         await invoices.addOne({
             user_id: userId,
+            email: userEmail,
             money: amount,
             date: new Date(),
             payment_method: 'fake_card',
@@ -264,25 +261,7 @@ router.post('/subscription/reactivate', async (req, res) => {
 
 
 // GET /v1/users
-router.get('/users', requireAdmin, async (_req, res) => {
-  try {
-    const db = await getDb();
-    if (!db) return res.json([]); // no DB configured
 
-    const users = await db.collection('users').find({}).limit(500).toArray();
-    const out = users.map((u) => ({
-      id: String(u._id ?? u.id ?? ''),
-      email: u.email ?? '',
-      role: u.role ?? u.roll ?? 'user',
-      balance: Number(u.balance ?? u.wallet ?? 0),
-      name: u.name ?? u.username ?? '',
-    }));
-    return res.json(out);
-  } catch {
-    // Keep UI working even if DB is temporarily down
-    return res.json([]);
-  }
-});
 
 //Ändra roll på konto
 router.patch('/role/:id', requireAdmin, async (req, res) => {
@@ -291,15 +270,15 @@ router.patch('/role/:id', requireAdmin, async (req, res) => {
 
   try {
     const db = await getDb();
-    if (!db) return res.status(501).json({ error: 'DB not configured' });
+    if (!db) return res.status(501).json({ message: 'DB not configured' });
 
     const _id = ObjectId.isValid(id) ? new ObjectId(id) : null;
-    if (!_id) return res.status(400).json({ error: 'Invalid id' });
+    if (!_id) return res.status(400).json({ message: 'Invalid id' });
 
     await db.collection('users').updateOne({ _id }, { $set: { role } });
     return res.json({ ok: true });
   } catch {
-    return res.status(500).json({ error: 'Failed to update user' });
+    return res.status(500).json({ message: 'Failed to update user' });
   }
 });
 
@@ -308,63 +287,20 @@ router.delete('/delete/:id', requireAdmin, async (req, res) => {
 
   try {
     const db = await getDb();
-    if (!db) return res.status(501).json({ error: 'DB not configured' });
+    if (!db) return res.status(501).json({ message: 'DB not configured' });
 
     const _id = ObjectId.isValid(id) ? new ObjectId(id) : null;
-    if (!_id) return res.status(400).json({ error: 'Invalid id' });
+    if (!_id) return res.status(400).json({ message: 'Invalid id' });
 
     await db.collection('users').deleteOne({ _id });
     return res.json({ ok: true });
   } catch {
-    return res.status(500).json({ error: 'Failed to delete user' });
+    return res.status(500).json({ message: 'Failed to delete user' });
   }
 });
 
 
 
-// här kommer några fixes till user profil för det gick inte att visa.
 
-
-router.get('/user/profile', authenticate, async (req, res) => {
-  try {
-    const db = getDb();
-    const users = db.collection('users');
-
-    const userId = req.user?.id ?? req.user?._id ?? null;
-    const email = req.user?.email ?? null;
-
-    const u =
-      (userId ? await users.findOne({ id: userId }) : null) ||
-      (email ? await users.findOne({ email }) : null);
-
-    if (!u) return res.status(404).json({ message: 'User not found' });
-
-    // Never return password fields
-    const profile = {
-      id: String(u.id ?? u._id ?? ''),
-      name: String(u.name ?? u.username ?? ''),
-      email: String(u.email ?? ''),
-      role: String(u.role ?? u.roll ?? 'user'),
-      wallet: Number(u.wallet ?? u.balance ?? 0),
-      enabled: Boolean(u.enabled ?? true),
-      last4: u.last4 ?? null,
-      exp_date: u.exp_date ?? null,
-      subscription: u.subscription ?? { status: 'inactive', nextBillingDate: null, monthlyFee: 0 },
-      rides: Array.isArray(u.rides) ? u.rides : [],
-    };
-
-    return res.json(profile);
-  } catch (e) {
-    console.error('[user/profile] failed:', e);
-    return res.status(500).json({ message: 'Failed to fetch profile' });
-  }
-});
-
-router.get('/:email', async (req, res) => {
-    const email = req.params.email;
-    const doc = await user.getOne(email);
-
-    return res.json({ doc });
-});
 
 export default router;

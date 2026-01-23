@@ -12,9 +12,6 @@ jobs:
 
     runs-on: ubuntu-latest
 
-    env:
-      DB_PASS: ${{ secrets.DB_PASS }}
-
     strategy:
       matrix:
         node-version: [18.x, 20.x, 22.x]
@@ -33,6 +30,27 @@ jobs:
       with:
         mongodb-version: ${{ matrix.mongodb-version }}
 
+    # Create a temporary .env file with all your variables
+    - name: Create .env file for CI
+      run: |
+        echo "MONGODB_URL='mongodb+srv://Hani:4rswjPdNUgPwLv9b@cluster0.5s8wzba.mongodb.net/vteam7?appName=Cluster0'" >> .env
+        echo "MONGODB_DB='vteam7'" >> .env
+        echo "ADMIN_EMAIL='Hani@gmail.com'" >> .env
+        echo "ADMIN_PASSWORD='123'" >> .env
+        echo "PORT='3000'" >> .env
+        echo "HOST='0.0.0.0'" >> .env
+        echo "DATABASE_URL='mongodb://mongo:27017/elsparkcyklar'" >> .env
+        echo "SEED_SCOOTERS='0'" >> .env
+        echo "DB_PASS='8w1rMyzkem8sku15'" >> .env
+        echo "NODE_ENV='test'" >> .env
+        echo "JWT_SECRET='mtMI8T3vpt2Az95FJgprIh0FIydN2VTUBKw4ZOlSZHxCJEobpMqWSaDXbWqQq3QH'" >> .env
+        echo "SENDGRID_API_KEY='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'" >> .env
+        echo "GOOGLE_CLIENT_ID='759660775784-ue5e9ir3u7pkebomrmk32353dhqppthr.apps.googleusercontent.com'" >> .env
+        echo "GOOGLE_CLIENT_SECRET='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'" >> .env
+        echo "SEED_DB='false'" >> .env
+        echo "MONGODB_DB_TEST='vteam7_test'" >> .env
+        echo "MONGODB_URL_TEST='mongodb+srv://tiae24_db_user:fBxO5eHEFZPe0Aqv@cluster0.5s8wzba.mongodb.net/vteam7_test?retryWrites=true&w=majority&appName=text-editor&tls=true'" >> .env
+
     - name: Install Backend Dependencies
       run: |
         cd backend
@@ -41,4 +59,6 @@ jobs:
     - name: Run Backend Tests
       run: |
         cd backend
+        # Load .env variables before running tests
+        export $(grep -v '^#' .env | xargs)
         npm test

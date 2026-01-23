@@ -3,6 +3,8 @@ import { getDb } from '../../database.js';
 import { authenticate } from '../../middleware/utils.js';
 import requireAdmin from '../../middleware/admin.js';
 import { ObjectId } from 'mongodb';
+import { inStationZone, randomStationLocation } from '../../middleware/inZone.js';
+
 
 
 const router = express.Router();
@@ -17,8 +19,7 @@ router.get('/stations', async (req, res) => {
         if (!db) return res.json([]);
 
         const docs = await db.collection('laddningStation').find({}).toArray();
-        console.log(docs, "ttttttt")
-        res.json(docs);
+        res.status(200).json(docs);
     } catch (e) {
         next(e);
     }
@@ -27,35 +28,59 @@ router.get('/stations', async (req, res) => {
 
 
 router.post('/scooter/:scooterId/charge', async (req, res, next) => {
-    console.log("hej532444444444")
+    console.log("hej")
     try {
         const { station } = req.body;
         const scooterId = req.params.scooterId;
 
         const db = getDb();
-        if (!db) return res.status(500).json({ error: 'DB not connected' });
+        if (!db) return res.status(500).json({ message: 'DB not connected' });
+        
 
-        // Update bike location
-        let test = await db.collection('scooters').updateOne(
-            { id: scooterId },
-            { $set: { status: 'Charging' } }
-        );
+        //Finding the scooter
+        const scooter = await db.collection('scooters').findOne({ id: scooterId });
+        if (!scooter) return res.status(404).json({ message: 'Scooter not found' });
 
-        console.log(test, "-------------------------------------------\n\n", station)
 
-        // Add bike to spot
-        let chawo = await db.collection('laddningStation').updateOne(
+        //Find the station
+        const pickedStation = await db.collection('laddningStation').findOne({ _id: new ObjectId(station) });
+        if (!pickedStation) return res.status(404).json({ message: 'Station not found' });
+
+
+        const stationZone = inStationZone(scooter.location.lat, scooter.location.lng, pickedStation.zone)
+
+        //Getting a random location inside the "zone"
+        let random;
+        if(!stationZone) {
+            random = randomStationLocation(pickedStation.zone)
+        } else {
+            console.log("The scooter is already in the zone")
+            random = { lat: scooter.location.lat, lng: scooter.location.lng };
+        }
+
+        // ADding the bike to the station
+        await db.collection('laddningStation').updateOne(
             { _id: new ObjectId(station) },
             { $addToSet: { elsparkcyklar: scooterId } }
         );
 
-        console.log(chawo, "-------------------------------------------")
+
+        // Update bike location
+        await db.collection('scooters').updateOne(
+            { id: scooterId },
+            { $set: { 
+                status: 'Charging' ,
+                location: random
+            } }
+        );
 
         res.json({ message: 'Bike parked successfully', station });
     } catch (e) {
         next(e);
     }
 });
+
+
 
 
 
@@ -89,29 +114,5 @@ router.post('/scooter/:scooterId/uncharge', async (req, res, next) => {
 
 
 
-
-
-
-router.get('/stations', async (_req, res) => {
-    try {
-        const db = await getDb();
-        if (!db) return res.json([]);
-
-        const charging = await db.collection('chargingStations').find({}).limit(1000).toArray();
-        const parking = await db.collection('parkingStations').find({}).limit(1000).toArray();
-
-        const norm = (raw, type) => ({
-            id: String(raw._id ?? raw.id ?? ''),
-            city: raw.city ?? raw.stad ?? raw.cityName ?? raw.name ?? '—',
-            type,
-            capacity: Number(raw.capacity ?? raw.slots ?? raw.maxScooters ?? 0),
-            location: raw.location ?? raw.position ?? raw.coordinates ?? raw.zone?.center ?? null,
-        });
-
-        return res.json([...charging.map((s) => norm(s, 'Charging')), ...parking.map((s) => norm(s, 'Parking'))]);
-    } catch {
-        return res.json([]);
-    }
-});
 
 export default router;

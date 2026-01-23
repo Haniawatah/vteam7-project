@@ -1,11 +1,30 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { useScooters } from '../../hooks/useScooters';
+import L from 'leaflet';
 
 type Props = {
     setScooterId?: (id: string) => void;
     height?: number | string;
 };
+
+
+//Fixa färger till ikonerna på kartan, (hittat från git repot https://github.com/pointhi/leaflet-color-markers)
+const Icon = (status: string) => {
+    //Vi har Charging = RÖD, InUse Orange, Annars blå (standard)
+    const color = status === 'Charging' ? 'red' :
+                    status === 'InUse' ? 'orange' : 'blue';
+
+    return new L.Icon({
+        iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-${color}.png`,
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41],
+    });
+};
+
 
 const DEFAULT_CENTER: [number, number] = [59.3293, 18.0686]; // Standard: Stockholm
 
@@ -31,6 +50,7 @@ const ScooterMap: React.FC<Props> = ({ setScooterId, height = 420 }) => {
                 <Marker
                     key={`${s.id}:${s.location.lat}:${s.location.lng}`}
                     position={[s.location.lat, s.location.lng]}
+                    icon={Icon(s.status)}
                     eventHandlers={{ click: () => setScooterId?.(s.id) }}
                 >
                     <Popup>

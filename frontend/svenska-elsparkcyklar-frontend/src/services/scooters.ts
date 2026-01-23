@@ -227,6 +227,23 @@ export const fetchScootersAvailable = async () => {
 
 
 
+//Searching for scooter in specific city
+export const fetchScootersSpecificCity = async (stationId: String) => {
+    try {
+        const res = await api.get(`/scooters/city/${stationId}/`, {
+            headers: {
+                'Content-Type': 'application/json',
+                ...tokenHeader(),
+            },
+        });
+        return res.data;
+    } catch (error) {
+        throw new Error('Error fetching scooters: ' + toMessage(error));
+    }
+};
+
+
+
 
 // Get parking zones
 export const fetchParkingZone = async () => {

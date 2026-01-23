@@ -24,10 +24,11 @@ export async function getInvoice(id) {
 }
 
 // Add a new invoice
-export async function addInvoice({ user_id, money, date = new Date(), payment_method, status }) {
+export async function addInvoice({ user_id, email, money, date = new Date(), payment_method, status }) {
     const col = await invoicesCol();
     const doc = {
         user_id,
+        email,
         money,
         date,
         payment_method,

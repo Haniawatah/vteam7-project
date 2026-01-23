@@ -10,7 +10,6 @@
  * No changes to payment/auth flows in the app—this is a standalone script.
  */
 
-
 const env = process.env;
 
 const SIM_API_URL = env.SIM_API_URL ?? 'http://localhost:3000/v1';
@@ -51,9 +50,9 @@ async function http(method, path, { token, body, timeoutMs = 10_000, okStatuses 
     //if (method === 'POST' && path === '/scooters') {
       //let responseBody;
       //try {
-        //responseBody = await res.json(); // parse JSON body
+        //responseBody = await res.json();
       //} catch {
-        //responseBody = await res.text(); // fallback if not JSON
+        //responseBody = await res.text();
       //}
       //console.log('[SIM][DEBUG] POST /scooters response:', res.status, responseBody);
     //}
@@ -122,6 +121,10 @@ const apiStartRide = (token, scooterId) => http('POST', `/ride/start/${encodeURI
 const apiEndRide = (token, rideId, scooterId) =>
   http('POST', `/ride/end/${encodeURIComponent(rideId)}`, { token, body: { scooterId }, okStatuses: [200, 201] });
 
+const apiAddMoney = (token, amount) =>
+  http('PUT', '/user/wallet/add', { token, body: { amount }, okStatuses: [200] });
+
+
 function extractList(payload) {
   if (Array.isArray(payload)) return payload;
   if (Array.isArray(payload?.data)) return payload.data;
@@ -175,6 +178,7 @@ async function ensureUsers() {
   users.splice(0, users.length, ...res);
   console.log(`[sim] users ready: ${users.length}/${SIM_USERS}`);
 }
+
 
 // Replace the simple apiGetScooters() usage with paginated "fetch all" to get a real count.
 async function apiGetScootersPage(token, { limit = 250, page = 1 } = {}) {
@@ -263,7 +267,6 @@ async function ensureScooters() {
     return { lat: center.lat + dLat, lng: center.lng + dLng };
   }
 
-  console.log("[SIM]---------------------------------------------: ", adminToken)
 
   const creates = Array.from({ length: missing }, (_, i) =>
     limit(async () => {
@@ -305,6 +308,13 @@ async function ensureScooters() {
   const afterCount = afterList.map((s) => normId(s)).filter(Boolean).length;
   console.log(`[sim] scooters after init: ${afterCount}/${SIM_SCOOTERS}`);
 
+  try {
+    await autoScooterStation();
+    console.log('[sim] scooters assigned to stations');
+  } catch (err) {
+    console.error('[sim] failed to assign scooters to stations', err);
+  }
+
   // Update in-memory cache
   scooters = afterList.map((s) => ({ id: normId(s) })).filter((s) => s.id);
 }
@@ -313,14 +323,23 @@ async function startSomeRides() {
   const want = Math.max(0, Math.min(200, SIM_ACTIVE_TARGET - active.size));
   if (want === 0) return;
 
+  console.log('[sim] starting ride attempt:', users.length, scooters.length);
+
   const starts = Array.from({ length: want }, () =>
     limit(async () => {
       const uIdx = Math.floor(Math.random() * users.length);
       const u = users[uIdx];
       const s = scooters[Math.floor(Math.random() * scooters.length)];
+
+      if (!u?.token) console.log('[sim] skipped user', uIdx, u);
+      if (!s?.id) console.log('[sim] skipped scooter', s);
+
       if (!u?.token || !s?.id) return;
 
       try {
+        //Makes it so the user add 50kr to their account
+        await apiAddMoney(u.token, 50)
+
         const ride = await apiStartRide(u.token, s.id);
         const rideId = normId(ride) || normId(ride?.data);
         if (rideId) active.set(rideId, { scooterId: s.id, userIdx: uIdx });
@@ -354,15 +373,129 @@ async function endSomeRides() {
 
 
 
+
+//FLYTTADE IN AUTO IN HÄR
+
+export function inStationZone(x, y, stationZone) {
+    console.log("X:  ", x, "Y:  ", y, "Station:  ", stationZone, "---------------------------------------------")
+    if (!stationZone) return false;
+
+    const p1 = stationZone.position_1;
+    const p2 = stationZone.position_2;
+    const p3 = stationZone.position_3;
+    const p4 = stationZone.position_4;
+
+    //Hittar max och min värderna eftersom vi behöver dem för att se om ett värde är i zonen
+    const xMin = Math.min(p1[0], p2[0], p3[0], p4[0]);
+    const xMax = Math.max(p1[0], p2[0], p3[0], p4[0]);
+
+    const yMin = Math.min(p1[1], p2[1], p3[1], p4[1]);
+    const yMax = Math.max(p1[1], p2[1], p3[1], p4[1]);
+
+
+    //Kollar nu ifall våra x och y värden är inne i området
+    if (x >= xMin && x <= xMax && y >= yMin && y <= yMax) {
+        return true;
+    }
+
+    return false;
+}
+
+
+async function apiGetAllStations(cityId) {
+  const allStations = await http('GET', `/parking/stations/get/${cityId}`, { token: adminToken, okStatuses: [200] });
+  return extractList(allStations);
+}
+
+
+async function apiGetCities() {
+  const city = await http('GET', `/cities`, { token: adminToken , okStatuses: [200]});
+  return extractList(city);
+}
+
+
+
+// DEN MÅSTE FIXAS , (DEN FUNKADE FÖRUT MEN DEN MÅSTE VARA VID SIMULATION TROR JAG------------)
+
+export async function autoScooterStation() {
+  const scooters = await apiGetAllScooters(adminToken);
+  const cities = await apiGetCities();
+
+  for (const city of cities) {
+    // Hämta alla stationer i staden
+    const allaStationer = await apiGetAllStations(city._id);
+
+    // Loop över alla scooters i staden
+    const cityScooters = scooters.filter(s => s.city === city.city);
+
+    for (const scooter of cityScooters) {
+      const scooterX = scooter.location.lat;
+      const scooterY = scooter.location.lng;
+
+      let stationFound = null;
+      for (const station of allaStationer) {
+        if (inStationZone(scooterX, scooterY, station.zone)) {
+          stationFound = station;
+          break;
+        }
+      }
+
+      if (stationFound) {
+        let collectionName;
+        let doing;
+
+        //Kollar vilken station det är, för att veta vilken collection ska användas
+        //Gör även allt lowercase för att det ska bli mer säkert (alltså inte bokstav storlek skapar problem)
+        if (stationFound.name.toLowerCase().includes('charging')) {
+            collectionName = 'charging';
+            doing = 'charge'
+        } else if (stationFound.name.toLowerCase().includes('parking')){
+            collectionName = 'parking';
+            doing = 'park'
+        } else {
+          console.log("Error with station name (unlikely)");
+          continue;
+        }
+        try {
+          await http(
+            'POST',
+            `/scooter/${encodeURIComponent(collectionName)}/${encodeURIComponent(doing)}`,
+            {
+              token: adminToken,
+              body: { station: stationFound._id.toString() },
+              okStatuses: [200],
+            }
+          );
+        } catch (e) {
+          console.log("[SIM] ERROR IN SORTING SCOOTERS TO STATIONS")
+        }
+      }
+    }
+  }
+
+  return { ok: true };
+}
+
+//Måste göras för annars när vi stoppar simulationen kanske några cyklarna är inUse,
+async function resetScooters() {
+  await http('POST', `/admin/scooter/reset`, { token: adminToken , okStatuses: [200]});
+  console.log('[sim] scooters reset:');
+}
+
+
+
 async function main() {
   console.log(`[sim] api=${SIM_API_URL} users=${SIM_USERS} scooters=${SIM_SCOOTERS} activeTarget=${SIM_ACTIVE_TARGET} conc=${SIM_CONCURRENCY}`);
   await waitForBackend();
 
   await ensureAdminToken();
+
+  await resetScooters();
+
   await ensureUsers();
   await ensureScooters();
 
-
+  await autoScooterStation();
 
   let lastLog = 0;
   let stop = false;

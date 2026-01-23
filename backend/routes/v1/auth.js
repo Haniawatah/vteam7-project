@@ -8,7 +8,6 @@ import { getDb } from '../../database.js';
 const router = express.Router();
 
 router.get("/google", (req, res, next) => {
-  console.log("✅ Hit /google route!");
   next();
 }, passport.authenticate("google", { scope: ["profile", "email"] }));
 

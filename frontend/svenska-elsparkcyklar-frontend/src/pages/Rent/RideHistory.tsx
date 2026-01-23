@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { getRideHistory } from '../../services/rides';
-import { Ride } from '../../types';
+import { useNavigate } from 'react-router-dom';
+
 
 const RideHistory: React.FC = () => {
-    const [rides, setRides] = useState<Ride[]>([]);
+    const [rides, setRides] = useState([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
+    const navigate = useNavigate();
 
     useEffect(() => {
         const fetchRideHistory = async () => {
@@ -34,35 +36,58 @@ const RideHistory: React.FC = () => {
     return (
         <div>
             <h1>Ride History</h1>
-            <ul>
-                {rides
-                    //Filtrera så vi bara visar Färdiga logs eftersom den som är aktiv kan synas på aktiv
-                    .filter(ride => ride.status !== 'active')
-                    .map((ride) => {
-                        const startDate = ride.start_time ? new Date(ride.start_time) : null;
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Scooter ID</th>
+                        <th >Duration (min)</th>
+                        <th>Status</th>
+                        <th>Cost ($)</th>
+                    </tr>
+                </thead>
 
-                        let duration = 0;
-                        if (ride.end_time) {
-                            const startTime = new Date(ride.start_time).getTime();
-                            const endTime = new Date(ride.end_time).getTime();
-                            duration = Math.ceil((endTime - startTime) / 60000);
-                        }
+                <tbody>
+                    {rides
+                        //Filtrera så vi bara visar Färdiga logs eftersom den som är aktiv kan synas på aktiv
+                        .filter(ride => ride.status !== 'active')
+                        .map((ride) => {
+                            const startDate = ride.start_time ? new Date(ride.start_time) : null;
 
-                        const cost = ride.price ?? 0;
+                            let duration = 0;
+                            if (ride.end_time) {
+                                const startTime = new Date(ride.start_time).getTime();
+                                const endTime = new Date(ride.end_time).getTime();
+                                duration = Math.ceil((endTime - startTime) / 60000);
+                            }
 
-                        return (
-                            <li key={ride._id}>
-                                <p>Date: {startDate ? startDate.toLocaleDateString() : '—'}</p>
-                                <p>Scooter ID: {ride.scooterId}</p>
-                                <p>Duration: {duration} minutes</p>
-                                <p>Status: {ride.status}</p>
-                                <p>Cost: ${cost.toFixed(2)}</p>
-                            </li>
-                        );
-                    })}
-            </ul>
+                            const cost = ride.price ?? 0;
+
+                            return (
+                            <tr key={ride.id} style={{ borderBottom: '1px solid #eee' }}>
+                                <td style={{ padding: '8px' }}>{startDate ? startDate.toLocaleDateString() : '—'}</td>
+                                <td>
+                                    <a href={`/ride/history/${ride.id}`}
+                                        style={{ color: 'blue', textDecoration: 'underline', cursor: 'pointer' }}>
+                                        {ride.scooterId}
+                                    </a>
+                                </td>
+                                <td style={{ padding: '8px' }}>{duration} min</td>
+                                <td style={{ padding: '8px' }}>{ride.status}</td>
+                                <td style={{ padding: '8px' }}>${cost.toFixed(2)}</td>
+                            </tr>
+                            );
+                        })}
+                    </tbody>
+            </table>
         </div>
     );
 };
+
+
+
+
+
+
 
 export default RideHistory;

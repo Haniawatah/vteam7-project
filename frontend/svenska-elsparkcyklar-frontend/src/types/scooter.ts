@@ -1,4 +1,4 @@
-export type ScooterStatus = 'Available' | 'InUse' | 'Maintenance' | 'Off';
+export type ScooterStatus = 'Available' | 'InUse' | 'Maintenance' |'Charging' | 'Off';
 
 export interface Scooter {
   id: string;

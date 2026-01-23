@@ -6,7 +6,7 @@ import requireAdmin from '../../middleware/admin.js';
 const router = express.Router();
 
 // Minimal admin listing endpoint (prevents 404 later; safe empty fallback)
-router.get('/invoices', authenticate, requireAdmin, async (_req, res) => {
+router.get('/all', authenticate, requireAdmin, async (_req, res) => {
   try {
     const db = await getDb();
     if (!db) return res.json([]);
@@ -15,8 +15,10 @@ router.get('/invoices', authenticate, requireAdmin, async (_req, res) => {
       invoices.map((i) => ({
         id: String(i._id ?? i.id ?? ''),
         userId: String(i.userId ?? i.user_id ?? ''),
-        amount: Number(i.amount ?? 0),
+        email: String(i.email ?? ''),
+        money: Number(i.amount ?? i.money ?? 0),
         date: i.date ?? i.createdAt ?? null,
+        payment_method: i.payment_method ?? null,
         status: i.status ?? '—',
       }))
     );

@@ -28,6 +28,7 @@ import OAuthSuccess from '../services/oauth';
 
 
 import ScooterZonesMap from '../pages/ZoneMap';
+import UserRideHistory from '../pages/Rent/UserRideHistory';
 
 
 const AppRoutes = () => {
@@ -38,6 +39,9 @@ const AppRoutes = () => {
                 <Route path="rent" element={<RentScooter />} />
                 <Route path="rent/active/:rideId" element={<ProtectedRoute><ActiveRide /></ProtectedRoute>} />
                 <Route path="rent/history" element={<ProtectedRoute><RideHistory /></ProtectedRoute>} />
+
+
+                <Route path="ride/history/:rideId" element={<ProtectedRoute><UserRideHistory /></ProtectedRoute>} />
 
                 <Route path="testmap" element={<ProtectedRoute><ScooterZonesMap /></ProtectedRoute>} />
 

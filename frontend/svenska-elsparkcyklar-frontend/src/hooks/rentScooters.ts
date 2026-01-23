@@ -10,6 +10,7 @@ function coerceStatus(value: unknown): ScooterStatus {
         case 'Available':
         case 'InUse':
         case 'Maintenance':
+        case 'Charging' :
         case 'Off':
         return value;
         default:

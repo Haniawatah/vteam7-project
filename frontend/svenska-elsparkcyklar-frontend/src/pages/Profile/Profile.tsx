@@ -1,11 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { fetchProfile } from '../../services/user';
+import { getUserActiveRide } from '../../services/rides';
 import { useNavigate } from 'react-router-dom';
+
+
+
 
 const Profile: React.FC = () => {
     const [user, setUser] = useState<any>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
+    const [activeRide, setActiveRide] = useState<any>(null);
+    const [rideHistory, setRideHistory] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -24,6 +30,26 @@ const Profile: React.FC = () => {
         void load();
     }, []);
 
+    useEffect(() => {
+        const loadActiveRide = async () => {
+            try {
+                const data = await getUserActiveRide();
+                console.log("nywa dawd ", data)
+                if (data.success === true) {
+                    const ride = data.ride._id ?? data.ride.id;
+                    setActiveRide(ride);
+                    setRideHistory(true)
+                } else {
+                  setRideHistory(false)
+                }
+            } catch (err) {
+                console.log('No active ride', err);
+            }
+        };
+        void loadActiveRide();
+    }, []);
+
+
     const handleyPayment = () => {
         navigate('/profile/payment');
     };
@@ -34,6 +60,14 @@ const Profile: React.FC = () => {
 
     const monthly = () => {
         navigate('/profile/monthly');
+    };
+
+    const ActiveRide = () => {
+        navigate(`/rent/active/${activeRide}`);
+    };
+
+    const RideHistory = () => {
+        navigate('/rent/history');
     };
 
     if (loading) return <p>Loading...</p>;
@@ -110,7 +144,7 @@ const Profile: React.FC = () => {
       </div>
 
 
-      {/* Wallet / balance card */}
+      {/* Walet / balance card */}
       <div className="profile-card">
         <h2>Plånbok</h2>
         <div style={{ fontSize: 28, fontWeight: 800, marginTop: 6 }}>
@@ -145,29 +179,10 @@ const Profile: React.FC = () => {
       {/* Ride summary */}
       <div className="profile-card">
         <h2>Åkningar (sammanfattning)</h2>
-        {user.rides?.length > 0 ? (
-          <>
-            {user.rides.slice(0, 5).map((r: any) => (
-              <div key={r.id} className="profile-list__row">
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontWeight: 700 }}>
-                    Scooter <span style={{ fontFamily: 'monospace' }}>{r.scooterId}</span>
-                  </div>
-                  <div style={{ color: 'var(--muted)', fontSize: 12 }}>
-                    Start: {r.startTime ?? r.date} · Slut: {r.endTime}
-                  </div>
-                </div>
-                <div className="profile-list__meta">
-                  <span className="badge">{r.status ?? '—'}</span>
-                </div>
-              </div>
-            ))}
-          </>
-        ) : (
-          <div style={{ marginTop: 12, color: 'var(--muted)' }}>
-            Inga åkningar ännu. Hyra en scooter för att komma igång.
+          <div style={{ marginTop: 12, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <button className="button" disabled={!rideHistory} onClick={ActiveRide}>Aktiv Ride</button>
+            <button className="button secondary" onClick={RideHistory}>Ride History</button>
           </div>
-        )}
       </div>
     </section>
   </div>

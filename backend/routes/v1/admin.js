@@ -4,6 +4,7 @@ import user from '../../models/user.js';
 
 import { checkToken } from '../../middleware/utils.js';
 import { checkAdmin } from '../../middleware/admin.js';
+import { getDb } from '../../database.js';
 
 
 const router = express.Router();
@@ -11,33 +12,6 @@ const router = express.Router();
 router.use(checkToken);
 
 
-// GET all charging stations
-router.get('/', checkToken, checkAdmin, async (req, res) => {
-    const data = await elsparkcyklar.getAll();
-    return res.json({ data });
-});
-
-
-router.get('/users', checkToken, checkAdmin, async (req, res) => {
-    const data = await user.getAll();
-    res.status(200).json(data);
-});
-
-router.get('/user/:email', checkToken, checkAdmin, async (req, res) => {
-    console.log("hejsan")
-    const email = req.params.email;
-    const data = await user.getOne(email);
-
-    return res.json({ data });
-});
-
-
-router.get('/bike/:id', checkToken, checkAdmin, async (req, res) => {
-    const id = req.params.id;
-    const data = await elsparkcyklar.getOne(id);
-
-    return res.json({ data });
-});
 
 router.get('/admin/users', checkToken, checkAdmin, async (_req, res) => {
     try {
@@ -56,6 +30,18 @@ router.get('/admin/users', checkToken, checkAdmin, async (_req, res) => {
         );
     } catch {
         return res.json([]);
+    }
+});
+
+
+router.post('/admin/scooter/reset', checkToken, checkAdmin, async (req, res, next) => {
+    try {
+        const db = getDb();
+        await db.collection('scooters').updateMany({}, { $set: { status: 'Available' } });
+        await db.collection('log').updateMany({ status: 'active' }, { $set: { status: 'abandoned', end_time: new Date() } });
+        res.json({ ok: true, message: 'Simulation reset' });
+    } catch (e) {
+        next(e);
     }
 });
 
