@@ -9,62 +9,46 @@ on:
 
 jobs:
   build:
+
     runs-on: ubuntu-latest
+
+    env:
+      MONGODB_URL: ${{ secrets.MONGODB_URL }}
+      MONGODB_DB: ${{ secrets.MONGODB_DB }}
+      ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+      ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+      PORT: ${{ secrets.PORT }}
+      HOST: ${{ secrets.HOST }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      SEED_SCOOTERS: ${{ secrets.SEED_SCOOTERS }}
+      DB_PASS: ${{ secrets.DB_PASS }}
+      NODE_ENV: ${{ secrets.NODE_ENV }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+      GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+      SEED_DB: ${{ secrets.SEED_DB }}
+      MONGODB_DB_TEST: ${{ secrets.MONGODB_DB_TEST }}
+      MONGODB_URL_TEST: ${{ secrets.MONGODB_URL_TEST }}
 
     strategy:
       matrix:
         node-version: [18.x, 20.x, 22.x]
       max-parallel: 1
 
-    services:                        # ✅ MUST be here, under the job
-      mongo:
-        image: mongo:6.0
-        ports:
-          - 27017:27017
-        options: >                  # ✅ Use > or | for multiline strings
-          --health-cmd "mongosh --eval 'db.runCommand({ ping: 1 })'" 
-          --health-interval 10s 
-          --health-timeout 5s 
-          --health-retries 5
-
-    env:
-      MONGODB_URL: ${{ secrets.MONGODB_URL }}
-      MONGODB_URL_TEST: 'mongodb://localhost:27017/vteam7_test'
-      NODE_ENV: test
-
     steps:
-      - uses: actions/checkout@v3
+    - uses: actions/checkout@v3
 
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
-        with:
-          node-version: ${{ matrix.node-version }}
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
 
-      - name: Install Backend Dependencies
-        run: |
-          cd backend
-          npm install
+    - name: Install Backend Dependencies
+      run: |
+        cd backend
+        npm install
 
-      - name: Wait for MongoDB to be ready
-        run: |
-          for i in {1..30}; do
-            mongo --eval "db.adminCommand('ping')" && break
-            echo "Waiting for MongoDB..."
-            sleep 2
-          done
-        env:
-          PATH: /usr/bin:$PATH
-
-      - name: Seed local test DB from Atlas
-        run: |
-          cd backend
-          node copy.js
-        env:
-          MONGODB_URL: ${{ secrets.MONGODB_URL }}
-
-      - name: Run Backend Tests
-        run: |
-          cd backend
-          npm test
-        env:
-          MONGODB_URL_TEST: 'mongodb://localhost:27017/vteam7_test'
+    - name: Run Backend Tests
+      run: |
+        cd backend
+        npm test
