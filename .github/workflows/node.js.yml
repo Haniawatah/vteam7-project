@@ -1,0 +1,59 @@
+name: Node.js CI
+
+on:
+  push:
+    branches: [ "main", "backend-setup" ]
+  pull_request:
+    branches: [ "main", "backend-setup" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    env:
+      MONGODB_URL: ${{ secrets.MONGODB_URL }}
+      MONGODB_DB: ${{ secrets.MONGODB_DB }}
+      ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+      ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+      PORT: ${{ secrets.PORT }}
+      HOST: ${{ secrets.HOST }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      SEED_SCOOTERS: ${{ secrets.SEED_SCOOTERS }}
+      DB_PASS: ${{ secrets.DB_PASS }}
+      NODE_ENV: ${{ secrets.NODE_ENV }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+      GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+      SEED_DB: ${{ secrets.SEED_DB }}
+      MONGODB_DB_TEST: ${{ secrets.MONGODB_DB_TEST }}
+      MONGODB_URL_TEST: ${{ secrets.MONGODB_URL_TEST }}
+
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x, 22.x]
+      max-parallel: 1
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+
+    - name: Install Backend Dependencies
+      run: |
+        cd backend
+        npm install
+
+    - name: EsLint Backend Code
+      run: |
+        cd backend
+        npx eslint .
+
+    - name: Run Backend Tests
+      run: |
+        cd backend
+        npm test

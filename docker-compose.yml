@@ -1,0 +1,75 @@
+services:
+  mongo:
+    image: mongo:7
+    container_name: vteam7-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  backend:
+    build:
+      context: ./backend
+    container_name: vteam7-backend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    environment:
+      DATABASE_URL: mongodb://mongo:27017/elsparkcyklar
+      HOST: 0.0.0.0
+      PORT: 3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mongo
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/v1/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  frontend:
+    image: node:20-alpine
+    container_name: vteam7-frontend
+    working_dir: /app
+    restart: unless-stopped
+    environment:
+      chokidar_usepolling: "true"
+      VITE_API_URL: http://localhost:3000/v1
+    volumes:
+      - ./frontend/svenska-elsparkcyklar-frontend:/app
+      - frontend_node_modules:/app/node_modules
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 5173"
+    ports:
+      - "5173:5173"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  simulator:
+    image: node:20-alpine
+    container_name: vteam7-simulator
+    working_dir: /app
+    restart: unless-stopped
+    environment:
+      SIM_API_URL: http://backend:3000/v1
+      SIM_USERS: 1000
+      SIM_SCOOTERS: 1000
+      SIM_ACTIVE_TARGET: 250
+      SIM_CONCURRENCY: 50
+      SIM_TICK_MS: 2000
+      SIM_LOG_EVERY_MS: 5000
+      SIM_USER_PASSWORD: Passw0rd!
+      SIM_ADMIN_EMAIL: Hani@gmail.com
+      SIM_ADMIN_PASSWORD: "123"
+    volumes:
+      - ./backend/sim:/app/sim:ro
+    command: sh -c "node ./sim/simulator.mjs"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  mongo-data:
+  frontend_node_modules:

@@ -1,0 +1,36 @@
+.payment-container {
+  max-width: 520px;
+  margin: 24px auto;
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.payment-form {
+  display: grid;
+  gap: 12px;
+}
+
+.payment-form label {
+  display: grid;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.payment-form input {
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.payment-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.payment-actions button {
+  width: 100%;
+}
